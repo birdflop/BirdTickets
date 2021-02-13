@@ -1,5 +1,9 @@
-# Warning
-This bot is in the alpha stage of development. I strongly urge you to reconsider your life choices if you plan to use this bot on a Discord server you care about.
+# Features
+1. Automatically close tickets if the ticket is left empty 1 hour after creation.
+2. Automatically close tickets if the ticket creator leaves the Discord.
+3. HTML transcripts will be sent to your logs channel and to the ticket owner in pms.
+4. A reaction panel is used to open tickets.
+5. Add and remove people from tickets with the -add and -remove commands.
 
 # Setup:
 1. Invite the bot to your server https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=0&scope=bot
