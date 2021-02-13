@@ -93,7 +93,6 @@ async def saveandclose(channel):
         cursor.execute(command)
         result = cursor.fetchone()
         if result[0] > 0:
-            transcript = await get_transcript(channel)
             cursor = db.cursor()
             command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id} LIMIT 1;"
             cursor.execute(command)
@@ -102,14 +101,16 @@ async def saveandclose(channel):
             if transcript_channel_id:
                 transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
                 if transcript_channel:
+                    transcript = await get_transcript(channel)
                     await transcript_channel.send(file=transcript)
+            transcript = await get_transcript(channel)
             cursor = db.cursor()
             print(channel.id)
             command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
-            ticketowner = bot.get_user(result[0])
-            await ticketowner.send(file=transcript)
+            ticket_owner = bot.get_user(result[0])
+            await ticket_owner.send(file=transcript)
             cursor = db.cursor()
             command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
             cursor.execute(command)
@@ -179,6 +180,7 @@ async def set_log(ctx, arg):
             cursor = db.cursor()
             cursor.execute(arg)
             result = cursor.fetchall()
+            print(result)
 
 
 @bot.command(name='setlog', help='Set the log channel')
