@@ -48,7 +48,7 @@ async def on_guild_join(guild):
 async def on_member_remove(member):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT ticketchannel FROM tickets WHERE owner = {member.id};"
+        command = f"SELECT ticketchannel FROM tickets WHERE owner = {member.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         for r in result:
@@ -63,7 +63,7 @@ async def on_member_remove(member):
 async def add(ctx, user: discord.Member):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id};"
+        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         if result[0] > 0:
@@ -74,7 +74,7 @@ async def add(ctx, user: discord.Member):
 async def remove(ctx, user: discord.Member):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id};"
+        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         if result[0] > 0:
@@ -89,25 +89,25 @@ async def close(ctx):
 async def saveandclose(channel):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {channel.id};"
+        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         if result[0] > 0:
             transcript = await get_transcript(channel)
             cursor = db.cursor()
-            command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id};"
+            command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
             transcript_channel = result[0]
             if transcript_channel:
                 await transcript_channel.send(file=transcript)
             cursor = db.cursor()
-            command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id};"
+            command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
             ticketowner = bot.get_user(result[0])
             cursor = db.cursor()
-            command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id}"
+            command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
             cursor.execute(command)
             await channel.delete()
             await ticketowner.send(file=transcript)
@@ -178,7 +178,6 @@ async def set_log(ctx, arg):
             cursor = db.cursor()
             cursor.execute(arg)
             result = cursor.fetchall()
-            print(result)
 
 
 @bot.command(name='setlog', help='Set the log channel')
@@ -200,9 +199,9 @@ async def set_log(ctx, channel: discord.TextChannel):
 
 @bot.command(name='panel', help='Create a panel')
 @has_permissions(administrator=True)
-async def panel(ctx):
+async def panel(ctx, color=39393):
     channel = ctx.channel
-    embed_var = discord.Embed(title="Need Help?", description="React below to create a support ticket.")
+    embed_var = discord.Embed(title="Need Help?", color=int(color), description="React below to create a support ticket.")
     p = await channel.send(embed=embed_var)
     await p.add_reaction('🎟️')
     with sqlite3.connect("data.db") as db:
@@ -219,7 +218,7 @@ async def on_raw_reaction_add(payload):
         return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM guilds WHERE panelmessage = {payload.message_id};"
+        command = f"SELECT COUNT(*) FROM guilds WHERE panelmessage = {payload.message_id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         if result[0] > 0:
@@ -229,7 +228,7 @@ async def on_raw_reaction_add(payload):
             member = await guild.fetch_member(payload.user_id)
             await message.remove_reaction('🎟️', member)
             cursor = db.cursor()
-            command = f"SELECT * FROM tickets WHERE parentguild = {payload.guild_id} AND owner = {payload.user_id};"
+            command = f"SELECT * FROM tickets WHERE parentguild = {payload.guild_id} AND owner = {payload.user_id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
             if result:
@@ -237,7 +236,7 @@ async def on_raw_reaction_add(payload):
                 mention = user.mention
                 reply = f"You already have a ticket open. Please state your issue here {mention}"  # TODO Mention them
                 cursor = db.cursor()
-                command = f"SELECT ticketchannel FROM tickets WHERE owner = {payload.user_id} AND parentguild = {payload.guild_id};"
+                command = f"SELECT ticketchannel FROM tickets WHERE owner = {payload.user_id} AND parentguild = {payload.guild_id} LIMIT 1;"
                 cursor.execute(command)
                 result = cursor.fetchone()
                 guild = bot.get_guild(payload.guild_id)
@@ -245,12 +244,12 @@ async def on_raw_reaction_add(payload):
                 await channel.send(reply)
             else:
                 cursor = db.cursor()
-                command = f"SELECT ticketscategory FROM guilds WHERE guildid = {payload.guild_id};"
+                command = f"SELECT ticketscategory FROM guilds WHERE guildid = {payload.guild_id} LIMIT 1;"
                 cursor.execute(command)
                 result = cursor.fetchone()
                 category = discord.utils.get(guild.categories, id=result[0])
                 cursor = db.cursor()
-                command = f"SELECT nextticketid FROM guilds WHERE guildid = {payload.guild_id};"
+                command = f"SELECT nextticketid FROM guilds WHERE guildid = {payload.guild_id} LIMIT 1;"
                 cursor.execute(command)
                 result = cursor.fetchone()
                 nextid = result[0]
