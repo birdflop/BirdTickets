@@ -12,4 +12,4 @@ This bot is in the alpha stage of development. I strongly urge you to reconsider
 8. (Optional) Create a transcript channel with `-setlog`.
 
 # Support
-If you run into any issues or bugs, you can ask for help in the Birdflop Hosting discord: https://discord.gg/ZrRvTMu.
+If you run into any issues or bugs, you can ask for help in the Birdflop Hosting Discord: https://discord.gg/ZrRvTMu.
