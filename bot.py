@@ -17,7 +17,7 @@ bot = commands.Bot(command_prefix='-', intents=discord.Intents.all())
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user.name} has started')
+    print("I am running")
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = """ CREATE TABLE IF NOT EXISTS guilds (
@@ -202,6 +202,7 @@ async def set_log(ctx, channel: discord.TextChannel):
 async def panel(ctx, color=39393):
     channel = ctx.channel
     embed_var = discord.Embed(title="Need Help?", color=int(color), description="React below to create a support ticket.")
+    embed_var.set_footer(text="Powered by Birdflop Hosting")
     p = await channel.send(embed=embed_var)
     await p.add_reaction('🎟️')
     with sqlite3.connect("data.db") as db:
