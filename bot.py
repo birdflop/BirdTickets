@@ -7,6 +7,7 @@ import sqlite3
 import chat_exporter
 import io
 from bs4 import BeautifulSoup
+import asyncio
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -21,8 +22,6 @@ async def on_ready():
         cursor = db.cursor()
         command = """ CREATE TABLE IF NOT EXISTS guilds (
                         guildid bigint PRIMARY KEY,
-                        supportrole bigint,
-                        panelchannel bigint,
                         panelmessage bigint,
                         ticketscategory bigint,
                         nextticketid bigint NOT NULL,
@@ -40,9 +39,10 @@ async def on_ready():
 async def on_guild_join(guild):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"""INSERT INTO guilds (guildid, supportrole, panelchannel, panelmessage, ticketscategory, nextticketid, transcriptchannel)
-                        VALUES({guild.id}, null, null, null, null, 1, null);"""
+        command = f"""INSERT INTO guilds (guildid, panelmessage, ticketscategory, nextticketid, transcriptchannel)
+                        VALUES({guild.id}, null, null, 1, null);"""
         cursor.execute(command)
+
 
 @bot.event
 async def on_member_remove(member):
@@ -102,14 +102,14 @@ async def saveandclose(channel):
             if transcript_channel:
                 await transcript_channel.send(file=transcript)
             cursor = db.cursor()
-            command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id}"
-            cursor.execute(command)
-            await channel.delete()
-            cursor = db.cursor()
             command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id};"
             cursor.execute(command)
             result = cursor.fetchone()
             ticketowner = bot.get_user(result[0])
+            cursor = db.cursor()
+            command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id}"
+            cursor.execute(command)
+            await channel.delete()
             await ticketowner.send(file=transcript)
 
 
@@ -132,6 +132,7 @@ async def get_transcript(channel):
     # Send transcript
     return transcript_file
 
+
 @bot.command()
 async def make_raw_transcript(ctx):
     # Create transcript
@@ -144,13 +145,14 @@ async def make_raw_transcript(ctx):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
                 if message.content == "":
                     message.content = "Non-Text Information: See HTML transcript for more information."
-                text_transcript.write(created_at + " " + message.author.name + "#" + str(message.author.discriminator) + " | " + message.content + "\n")
+                text_transcript.write(created_at + " " + message.author.name + "#" + str(
+                    message.author.discriminator) + " | " + message.content + "\n")
             text_transcript.replace("\r\n", "\n")
         await ctx.send(file=discord.File('transcript.txt'))
     finally:
-        print("hi")
         os.remove('transcript.txt')
-        
+
+
 @bot.command(name='setcategory', help='Set the ticket category')
 @has_permissions(administrator=True)
 async def set_category(ctx, category_id):
@@ -167,6 +169,16 @@ async def set_category(ctx, category_id):
                             WHERE guildid = {ctx.guild.id};"""
             cursor.execute(command)
             await ctx.send(response)
+
+
+@bot.command(name='query', help='Debug command')
+async def set_log(ctx, arg):
+    if ctx.user.id != 322764955516665856 and ctx.user.id != 223585930093658122:
+        with sqlite3.connect("data.db") as db:
+            cursor = db.cursor()
+            cursor.execute(arg)
+            result = cursor.fetchall()
+            print(result)
 
 
 @bot.command(name='setlog', help='Set the log channel')
@@ -196,8 +208,7 @@ async def panel(ctx):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"""UPDATE guilds
-                        SET panelchannel = {channel.id},
-                            panelmessage = {p.id}
+                        SET panelmessage = {p.id}
                         WHERE guildid = {ctx.guild.id};"""
         cursor.execute(command)
 
@@ -221,7 +232,18 @@ async def on_raw_reaction_add(payload):
             command = f"SELECT * FROM tickets WHERE parentguild = {payload.guild_id} AND owner = {payload.user_id};"
             cursor.execute(command)
             result = cursor.fetchone()
-            if result is None:
+            if result:
+                user = await guild.fetch_member(payload.user_id)
+                mention = user.mention
+                reply = f"You already have a ticket open. Please state your issue here {mention}"  # TODO Mention them
+                cursor = db.cursor()
+                command = f"SELECT ticketchannel FROM tickets WHERE owner = {payload.user_id} AND parentguild = {payload.guild_id};"
+                cursor.execute(command)
+                result = cursor.fetchone()
+                guild = bot.get_guild(payload.guild_id)
+                channel = discord.utils.get(guild.channels, id=result[0])
+                await channel.send(reply)
+            else:
                 cursor = db.cursor()
                 command = f"SELECT ticketscategory FROM guilds WHERE guildid = {payload.guild_id};"
                 cursor.execute(command)
@@ -236,23 +258,20 @@ async def on_raw_reaction_add(payload):
                 command = f"UPDATE guilds SET nextticketid = {nextid + 1} WHERE guildid = {payload.guild_id};"
                 cursor.execute(command)
                 channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
-                channel.set_permissions(member, read_messages=True, send_messages=True)
+                await channel.set_permissions(member, read_messages=True, send_messages=True)
                 await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.")
                 cursor = db.cursor()
                 command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
                                 VALUES({channel.id}, {payload.user_id}, {payload.guild_id});"""
                 cursor.execute(command)
+                db.commit()
+                cursor.close()
+                await asyncio.sleep(30*60)
+                if not await channel.history().get(author__id=payload.user_id):
+                    await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not respond.")
+                    await asyncio.sleep(30*60)
+                    if not await channel.history().get(author__id=payload.user_id):
+                        await saveandclose(channel)
 
-            else:
-                user = await guild.fetch_member(payload.user_id)
-                mention = user.mention
-                reply = f"You already have a ticket open. Please state your issue here {mention}"  # TODO Mention them
-                cursor = db.cursor()
-                command = f"SELECT ticketchannel FROM tickets WHERE owner = {payload.user_id} AND parentguild = {payload.guild_id};"
-                cursor.execute(command)
-                result = cursor.fetchone()
-                guild = bot.get_guild(payload.guild_id)
-                channel = discord.utils.get(guild.channels, id=result[0])
-                await channel.send(reply)
 
 bot.run(TOKEN)
