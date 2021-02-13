@@ -98,13 +98,17 @@ async def saveandclose(channel):
             command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
-            transcript_channel = result[0]
-            if transcript_channel:
-                await transcript_channel.send(file=transcript)
+            transcript_channel_id = result[0]
+            if transcript_channel_id:
+                transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
+                if transcript_channel:
+                    await transcript_channel.send(file=transcript)
             cursor = db.cursor()
+            print(channel.id)
             command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
+            print(result)
             ticketowner = bot.get_user(result[0])
             cursor = db.cursor()
             command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
@@ -156,8 +160,6 @@ async def make_raw_transcript(ctx):
 @bot.command(name='setcategory', help='Set the ticket category')
 @has_permissions(administrator=True)
 async def set_category(ctx, category_id):
-    if ctx.guild.owner.id != ctx.user.id:
-        return
     category = discord.utils.get(ctx.guild.categories, id=int(category_id))
 
     if category:
@@ -173,7 +175,7 @@ async def set_category(ctx, category_id):
 
 @bot.command(name='query', help='Debug command')
 async def set_log(ctx, arg):
-    if ctx.user.id != 322764955516665856 and ctx.user.id != 223585930093658122:
+    if ctx.author.id != 322764955516665856 and ctx.author.id != 223585930093658122:
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
             cursor.execute(arg)
@@ -183,8 +185,6 @@ async def set_log(ctx, arg):
 @bot.command(name='setlog', help='Set the log channel')
 @has_permissions(administrator=True)
 async def set_log(ctx, channel: discord.TextChannel):
-    if ctx.guild.owner.id != ctx.user.id:
-        return
     channel = discord.utils.get(ctx.guild.channels, id=channel.id)
     if channel:
         with sqlite3.connect("data.db") as db:
