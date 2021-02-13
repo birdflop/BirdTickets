@@ -108,13 +108,12 @@ async def saveandclose(channel):
             command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
-            print(result)
             ticketowner = bot.get_user(result[0])
+            await ticketowner.send(file=transcript)
             cursor = db.cursor()
             command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
             cursor.execute(command)
             await channel.delete()
-            await ticketowner.send(file=transcript)
 
 
 async def get_transcript(channel):
