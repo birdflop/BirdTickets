@@ -78,7 +78,7 @@ async def on_member_remove(member):
             channel = await bot.fetch_channel(r)
             guild = channel.guild
             if discord.utils.get(guild.members, id=int(member.id)) is None:
-                await channel.send("The channel owner left the Discord. This ticket will now automatically close")
+                await channel.send("The ticket owner left the Discord. This ticket will now automatically close")
                 await saveandclose(channel)
 
 
@@ -136,7 +136,9 @@ async def saveandclose(channel):
                 transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
                 if transcript_channel:
                     transcript = await get_transcript(channel)
+                    await channel.send('Please wait, preparing transcript...')
                     await transcript_channel.send(file=transcript)
+                    await channel.send('Transcript successfully created!')
             transcript = await get_transcript(channel)
             cursor = db.cursor()
             print(channel.id)
