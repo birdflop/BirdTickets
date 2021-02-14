@@ -190,7 +190,6 @@ async def make_raw_transcript(ctx):
                     message.content = "Non-Text Information: See HTML transcript for more information."
                 text_transcript.write(created_at + " " + message.author.name + "#" + str(
                     message.author.discriminator) + " | " + message.content + "\n")
-            text_transcript.replace("\r\n", "\n")
         await ctx.send(file=discord.File('transcript.txt'))
     finally:
         os.remove('transcript.txt')
