@@ -172,8 +172,9 @@ async def saveandclose(channel):
             transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
             if transcript_channel:
                 transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
-                embed_var = discord.Embed(title=f"{channel.name} by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator})",
-                                          description=f'Text transcript at [bin.birdflop.com]({binflop_link}).',
+                embed_var = discord.Embed(title=channel.name,
+                                          description=f"by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
+                                                      f"Text transcript at [bin.birdflop.com]({binflop_link}).",
                                           color=0x00ffff)
                 await transcript_channel.send(embed=embed_var)
                 await transcript_channel.send(file=transcript_file_1)
