@@ -202,13 +202,14 @@ async def make_raw_transcript(ctx):
     messages_limit = 2000
     messages = await ctx.channel.history(limit=messages_limit).flatten()
     try:
-        with open("transcript.txt", "a+", encoding="utf-8") as text_transcript:
+        with open("transcript.txt", "w", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
                 if message.content == "":
                     message.content = "Non-Text Information: See HTML transcript for more information."
                 text_transcript.write(created_at + " " + message.author.name + "#" + str(
                     message.author.discriminator) + " | " + message.content + "\n")
+        with open("transcript.txt", "r") as text_transcript:
             print(text_transcript.read())
             req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
             key = json.loads(req.content)['key']
