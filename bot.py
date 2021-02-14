@@ -194,7 +194,7 @@ async def get_transcript(channel):
     finally:
         os.remove('transcript.txt')
 
-    transcript = await chat_exporter.raw_export(channel, messages, 'America/New_York')
+    transcript = await chat_exporter.raw_export(channel, messages)
 
     # Convert transcript bytes into .html file
     transcript_file = discord.File(io.BytesIO(transcript.encode()), filename=f"transcript-{channel.name}.html")
