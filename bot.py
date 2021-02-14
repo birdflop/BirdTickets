@@ -116,6 +116,26 @@ async def add(ctx, user: discord.Member):
             await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
 
 
+@bot.command(name='help', help='Shows this message')
+async def help(ctx, command=None):
+    if ctx.guild is None:
+        return
+    if command is None:
+        embed_var = discord.Embed(title='BirdTickets Commands', color=0xffff00)
+        embed_var.add_field(name="Player commands",
+                            value="""new - Create a new ticket
+                            close - Close an existing ticket
+                            add - Add someone to a ticket
+                            remove - Remove someone from a ticket""")
+        embed_var.add_field(name="Owner commands",
+                            value="""panel - Create a support panel
+                            setprefix - Change the prefix
+                            setlog - Save transcripts to a channel
+                            setcategory - Set the ticket category
+                            removelog - Stop saving transcripts
+                            resetticketdata - Reset all ticket data""")
+
+
 @bot.command(name='remove', help='Remove someone from a ticket')
 async def remove(ctx, user: discord.Member):
     if ctx.guild is None:
@@ -173,7 +193,7 @@ async def saveandclose(channel):
             if transcript_channel:
                 transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
                 embed_var = discord.Embed(title=channel.name,
-                                          description=f"by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
+                                          description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
                                                       f"Text transcript at [bin.birdflop.com]({binflop_link}).",
                                           color=0x00ffff)
                 await transcript_channel.send(embed=embed_var)
