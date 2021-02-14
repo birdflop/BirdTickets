@@ -118,24 +118,24 @@ async def add(ctx, user: discord.Member):
 
 bot.remove_command('help')
 @bot.command(name='help', help='Shows this message')
-async def help(ctx, command=None):
+async def help(ctx):
     if ctx.guild is None:
         return
-    if command is None:
-        embed_var = discord.Embed(title='BirdTickets Commands', color=0xffff00)
-        embed_var.add_field(name="Player commands",
-                            value="""__new__ - Create a new ticket
-                            __close__ - Close an existing ticket
-                            __add__ - Add someone to a ticket
-                            __remove__ - Remove someone from a ticket""", inline=False)
-        embed_var.add_field(name="Administrator commands",
-                            value="""__panel__ - Create a support panel
-                            __setprefix__ - Change the prefix
-                            __setlog__ - Save transcripts to a channel
-                            __setcategory__ - Set the ticket category
-                            __removelog__ - Stop saving transcripts
-                            __resetticketdata__ - Reset all ticket data""", inline=False)
-        await ctx.channel.send(embed=embed_var)
+    embed_var = discord.Embed(title='BirdTickets Commands', color=39393)
+    embed_var.add_field(name="Player commands",
+                        value="__new__ - Create a new ticket"
+                              "__close__ - Close an existing ticket"
+                              "__add__ - Add someone to a ticket"
+                              "__remove__ - Remove someone from a ticket")
+    if ctx.author.guild_permissions.administrator:
+        embed_var.add_field(name="Admin commands",
+                            value="__panel__ - Create a support panel"
+                                  "__setprefix__ - Change the prefix"
+                                  "__setlog__ - Save transcripts to a channel"
+                                  "__setcategory__ - Set the ticket category"
+                                  "__removelog__ - Stop saving transcripts"
+                                  "__resetticketdata__ - Reset all ticket data", inline=False)
+    await ctx.channel.send(embed=embed_var)
 
 
 @bot.command(name='remove', help='Remove someone from a ticket')
@@ -197,20 +197,20 @@ async def saveandclose(channel):
                 embed_var = discord.Embed(title=channel.name,
                                           description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
                                                       f"Text transcript at [bin.birdflop.com]({binflop_link}).",
-                                          color=0x00ffff)
+                                          color=39393)
                 await transcript_channel.send(embed=embed_var)
                 await transcript_channel.send(file=transcript_file_1)
-                embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x00ff00)
+                embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=39393)
                 await msg_var.edit(embed=embed_var)
         if truncated:
             global messages_limit
             embed_var = discord.Embed(title='Ticket Transcript',
                                      description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over {messages_limit} messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                     color=0x00ffff)
+                                     color=39393)
         else:
             embed_var = discord.Embed(title='Ticket Transcript',
                                      description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                     color=0x00ffff)
+                                     color=39393)
         await ticket_owner.send(embed=embed_var, file=transcript_file_2)
         cursor = db.cursor()
         command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
