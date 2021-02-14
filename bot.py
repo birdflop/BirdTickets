@@ -152,51 +152,45 @@ async def close(ctx):
                 await ctx.channel.send(f"Use that command in {channel.mention}.")
             else:
                 await ctx.channel.send(f"You do not have an open ticket.")
-    await saveandclose(ctx.channel)
 
 
 async def saveandclose(channel):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
+        command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        if result[0] > 0:
-            cursor = db.cursor()
-            command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id} LIMIT 1;"
-            cursor.execute(command)
-            result = cursor.fetchone()
-            transcript_channel_id = result[0]
-            if transcript_channel_id:
-                transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
-                if transcript_channel:
-                    transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
-                    embedVar = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
-                    msg_var = await channel.send(embed=embedVar)
-                    await transcript_channel.send(file=transcript_file_1)
-                    await transcript_channel.send(binflop_link)
-                    embedVar = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x00ff00)
-                    await msg_var.edit(embed=embedVar)
-            cursor = db.cursor()
-            print(channel.id)
-            command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
-            cursor.execute(command)
-            result = cursor.fetchone()
-            ticket_owner = bot.get_user(result[0])
-            if truncated == True:
-                global messages_limit
-                embedVar = discord.Embed(title='Ticket Transcript',
-                                         description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained {messages_limit}+ messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                         color=0x00ffff)
-            else:
-                embedVar = discord.Embed(title='Ticket Transcript',
-                                         description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                         color=0x00ffff)
-            await ticket_owner.send(embed=embedVar, file=transcript_file_2)
-            cursor = db.cursor()
-            command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
-            cursor.execute(command)
-            await channel.delete()
+        transcript_channel_id = result[0]
+        if transcript_channel_id:
+            transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
+            if transcript_channel:
+                transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
+                embed_var = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
+                msg_var = await channel.send(embed=embed_var)
+                await transcript_channel.send(file=transcript_file_1)
+                await transcript_channel.send(binflop_link)
+                embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x00ff00)
+                await msg_var.edit(embed=embed_var)
+        cursor = db.cursor()
+        print(channel.id)
+        command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        ticket_owner = bot.get_user(result[0])
+        if truncated:
+            global messages_limit
+            embed_var = discord.Embed(title='Ticket Transcript',
+                                     description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over {messages_limit} messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                     color=0x00ffff)
+        else:
+            embed_var = discord.Embed(title='Ticket Transcript',
+                                     description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                     color=0x00ffff)
+        await ticket_owner.send(embed=embed_var, file=transcript_file_2)
+        cursor = db.cursor()
+        command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
+        cursor.execute(command)
+        await channel.delete()
 
 
 async def get_transcript(channel):
