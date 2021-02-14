@@ -154,10 +154,11 @@ async def saveandclose(channel):
             if transcript_channel_id:
                 transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
                 if transcript_channel:
-                    transcript = await get_transcript(channel)
+                    transcript, binflop_link = await get_transcript(channel)
                     embedVar = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
                     msg_var = await channel.send(embed=embedVar)
                     await transcript_channel.send(file=transcript)
+                    await transcript_channel.send(binflop_link)
                     embedVar = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x00ff00)
                     await msg_var.edit(embed=embedVar)
             transcript = await get_transcript(channel)
@@ -177,7 +178,23 @@ async def saveandclose(channel):
 
 async def get_transcript(channel):
     messages_limit = 2000
-    transcript = await chat_exporter.export(channel, messages_limit, 'America/New_York')
+    messages = await channel.history(limit=messages_limit).flatten()
+    try:
+        with open("transcript.txt", "w", encoding="utf-8") as text_transcript:
+            for message in reversed(messages):
+                created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
+                if message.content == "":
+                    message.content = "Non-Text Information: See HTML transcript for more information."
+                text_transcript.write(created_at + " " + message.author.name + "#" + str(
+                    message.author.discriminator) + " | " + message.content + "\n")
+        with open("transcript.txt", "r") as text_transcript:
+            req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
+            key = json.loads(req.content)['key']
+        binflop_link = 'https://bin.birdflop.com/' + key
+    finally:
+        os.remove('transcript.txt')
+
+    transcript = await chat_exporter.raw_export(channel, messages, 'America/New_York')
 
     # Convert transcript bytes into .html file
     transcript_file = discord.File(io.BytesIO(transcript.encode()), filename=f"transcript-{channel.name}.html")
@@ -192,30 +209,7 @@ async def get_transcript(channel):
             f'WARNING: Channel contains over {messages_limit} messages, so the transcript may have been truncated.')
 
     # Send transcript
-    return transcript_file
-
-
-@bot.command()
-async def make_raw_transcript(ctx):
-    # Create transcript
-    await ctx.send("Please wait, creating transcript...")
-    messages_limit = 2000
-    messages = await ctx.channel.history(limit=messages_limit).flatten()
-    try:
-        with open("transcript.txt", "w", encoding="utf-8") as text_transcript:
-            for message in reversed(messages):
-                created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
-                if message.content == "":
-                    message.content = "Non-Text Information: See HTML transcript for more information."
-                text_transcript.write(created_at + " " + message.author.name + "#" + str(
-                    message.author.discriminator) + " | " + message.content + "\n")
-        with open("transcript.txt", "r") as text_transcript:
-            req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
-            key = json.loads(req.content)['key']
-        await ctx.send('https://bin.birdflop.com/' + key)
-    finally:
-        os.remove('transcript.txt')
-
+    return transcript_file, binflop_link
 
 @bot.command(name='setcategory', help='Set the ticket category')
 @has_permissions(administrator=True)
