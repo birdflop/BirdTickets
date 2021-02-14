@@ -136,7 +136,7 @@ async def help(ctx):
                                   "__setcategory__ - Set the ticket category\n"
                                   "__removelog__ - Stop saving transcripts\n"
                                   "__resetticketdata__ - Reset all ticket data\n", inline=False)
-    await ctx.channel.send(embed=embed_var)
+    await ctx.reply(embed=embed_var)
 
 
 bot.remove_command('invite')
