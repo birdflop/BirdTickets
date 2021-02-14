@@ -156,27 +156,29 @@ async def close(ctx):
 
 async def saveandclose(channel):
     with sqlite3.connect("data.db") as db:
+        embed_var = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
+        msg_var = await channel.send(embed=embed_var)
         cursor = db.cursor()
         command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         transcript_channel_id = result[0]
-        if transcript_channel_id:
-            transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
-            if transcript_channel:
-                transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
-                embed_var = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
-                msg_var = await channel.send(embed=embed_var)
-                await transcript_channel.send(file=transcript_file_1)
-                await transcript_channel.send(binflop_link)
-                embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x00ff00)
-                await msg_var.edit(embed=embed_var)
         cursor = db.cursor()
-        print(channel.id)
         command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         ticket_owner = bot.get_user(result[0])
+        if transcript_channel_id:
+            transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
+            if transcript_channel:
+                transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
+                embed_var = discord.Embed(title=f"{channel.name} by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator})",
+                                          description=f'Text transcript at [bin.birdflop.com]({binflop_link}).',
+                                          color=0x00ffff)
+                await transcript_channel.send(embed=embed_var)
+                await transcript_channel.send(file=transcript_file_1)
+                embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x00ff00)
+                await msg_var.edit(embed=embed_var)
         if truncated:
             global messages_limit
             embed_var = discord.Embed(title='Ticket Transcript',

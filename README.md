@@ -18,3 +18,9 @@
 
 # Support
 If you run into any issues or bugs, you can ask for help in the Birdflop Hosting Discord: https://discord.gg/ZrRvTMu.
+
+# TODO
+1. Close inactive tickets
+2. Close tickets with lock reaction
+3. Log ticket owner and members - High Priority
+4. Make -help fancy - High priority
