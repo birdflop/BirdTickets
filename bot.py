@@ -124,7 +124,9 @@ async def close(ctx):
             result = cursor.fetchone()
             if result:
                 channel = discord.utils.get(ctx.guild.channels, id=result[0])
-                await ctx.channel.send(f"Use that command in {channel.mention}")
+                await ctx.channel.send(f"Use that command in {channel.mention}.")
+            else:
+                await ctx.channel.send(f"You do not have an open ticket.")
     await saveandclose(ctx.channel)
 
 
