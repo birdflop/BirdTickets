@@ -192,6 +192,7 @@ async def make_raw_transcript(ctx):
                     message.content = "Non-Text Information: See HTML transcript for more information."
                 text_transcript.write(created_at + " " + message.author.name + "#" + str(
                     message.author.discriminator) + " | " + message.content + "\n")
+            print(text_transcript)
             req = requests.post('https://bin.birdflop.com/documents', data=text_transcript)
             key = json.loads(req.content)['key']
         await ctx.send('https://bin.birdflop.com/' + key)
