@@ -289,6 +289,54 @@ async def panel(ctx, color=39393):
                         WHERE guildid = {ctx.guild.id};"""
         cursor.execute(command)
 
+@bot.command(name='new', help='Create a new ticket')
+async def new(ctx):
+    with sqlite3.connect("data.db") as db:
+        guild = ctx.guild
+        member = await guild.fetch_member(ctx.author.id)
+        cursor = db.cursor()
+        command = f"SELECT * FROM tickets WHERE parentguild = {guild.id} AND owner = {ctx.author.id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        if result:
+            user = member
+            mention = user.mention
+            reply = f"You already have a ticket open. Please state your issue here {mention}"  # TODO Mention them
+            cursor = db.cursor()
+            command = f"SELECT ticketchannel FROM tickets WHERE owner = {ctx.author.id} AND parentguild = {guild.id} LIMIT 1;"
+            cursor.execute(command)
+            result = cursor.fetchone()
+            channel = discord.utils.get(guild.channels, id=result[0])
+            await channel.send(reply)
+        else:
+            cursor = db.cursor()
+            command = f"SELECT ticketscategory FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
+            cursor.execute(command)
+            result = cursor.fetchone()
+            category = discord.utils.get(guild.categories, id=result[0])
+            cursor = db.cursor()
+            command = f"SELECT nextticketid FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
+            cursor.execute(command)
+            result = cursor.fetchone()
+            nextid = result[0]
+            cursor = db.cursor()
+            command = f"UPDATE guilds SET nextticketid = {nextid + 1} WHERE guildid = {guild.id};"
+            cursor.execute(command)
+            channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
+            await channel.set_permissions(member, read_messages=True, send_messages=True)
+            await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.")
+            cursor = db.cursor()
+            command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
+                            VALUES({channel.id}, {ctx.author.id}, {guild.id});"""
+            cursor.execute(command)
+            db.commit()
+            cursor.close()
+            await asyncio.sleep(30*60)
+            if not await channel.history().get(author__id=ctx.author.id):
+                await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not respond.")
+                await asyncio.sleep(30*60)
+                if not await channel.history().get(author__id=ctx.author.id):
+                    await saveandclose(channel)
 
 @bot.event
 async def on_raw_reaction_add(payload):
