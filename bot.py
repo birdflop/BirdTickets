@@ -39,7 +39,7 @@ async def set_prefix(ctx, prefix):
 @bot.event
 async def on_ready():
     print("I am running")
-    bot.activity = "birdflop.com"
+    await bot.change_presence(activity=discord.Game(name="birdflop.com"))
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = """CREATE TABLE IF NOT EXISTS guilds (
@@ -48,7 +48,7 @@ async def on_ready():
                         ticketscategory bigint,
                         nextticketid bigint NOT NULL,
                         transcriptchannel bigint,
-                        prefix varchar(6);"""
+                        prefix varchar(6) DEFAULT '-');"""
         cursor.execute(command)
         command = """CREATE TABLE IF NOT EXISTS tickets (
                         ticketchannel bigint PRIMARY KEY,
