@@ -402,11 +402,15 @@ async def create_ticket(guild, member):
             db.commit()
             cursor.close()
             await asyncio.sleep(30*60)
-            if not await channel.history().get(author__id=member.id):
-                await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not respond.")
-                await asyncio.sleep(30*60)
-                if not await channel.history().get(author__id=member.id):
-                    await saveandclose(channel)
+            history = channel.history()
+            if history:
+                if not await history.get(author__id=member.id):
+                    await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not respond.")
+                    await asyncio.sleep(30*60)
+                    history = channel.history()
+                    if history:
+                        if not await history.get(author__id=member.id):
+                            await saveandclose(channel)
 
 
 bot.run(TOKEN)
