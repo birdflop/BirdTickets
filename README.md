@@ -3,7 +3,8 @@
 2. Automatically close tickets if the ticket creator leaves the Discord.
 3. HTML transcripts will be sent to your logs channel and to the ticket owner in pms.
 4. A reaction panel is used to open tickets.
-5. Add and remove people from tickets with the -add and -remove commands.
+5. Custom bot prefix.
+6. Add and remove people from tickets.
 
 # Setup:
 1. Invite the bot to your server https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=0&scope=bot
