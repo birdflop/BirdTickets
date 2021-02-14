@@ -116,6 +116,7 @@ async def add(ctx, user: discord.Member):
             await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
 
 
+bot.remove_command('help')
 @bot.command(name='help', help='Shows this message')
 async def help(ctx, command=None):
     if ctx.guild is None:
