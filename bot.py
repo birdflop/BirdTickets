@@ -185,7 +185,7 @@ async def make_raw_transcript(ctx):
     messages_limit = 2000
     messages = await ctx.channel.history(limit=messages_limit).flatten()
     try:
-        with open("transcript.txt", "w", encoding="utf-8") as text_transcript:
+        with open("transcript.txt", "a+", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
                 if message.content == "":
