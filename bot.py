@@ -21,7 +21,9 @@ async def get_prefix(client, message):
         command = f"SELECT prefix FROM guilds WHERE guildid = {message.channel.guild.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        return result[0]
+        if result:
+            return result[0]
+        return '-'
 
 
 bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
@@ -32,10 +34,20 @@ bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
 async def set_prefix(ctx, prefix):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        response = f"Setting prefix to {prefix}"
         print(f"UPDATE guilds SET prefix = ?' WHERE guildid = {ctx.guild.id};", (prefix, ))
         cursor.execute(f"UPDATE guilds SET prefix = ? WHERE guildid = {ctx.guild.id};", (prefix, ))
+        response = f"Prefix set to {prefix}."
         await ctx.channel.send(response)
+
+
+@bot.command(name='reseticketdata', help='Reset all ticket data')
+@has_permissions(administrator=True)
+async def reset_ticket_data(ctx, prefix):
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"DELETE FROM tickets WHERE parentguild = {ctx.guild.id};"
+        cursor.execute(command)
+        await ctx.channel.send("All tickets have been removed from the database")
 
 
 @bot.event
@@ -240,6 +252,19 @@ async def set_log(ctx, channel: discord.TextChannel):
                             WHERE guildid = {ctx.guild.id};"""
             cursor.execute(command)
             await ctx.send(response)
+
+
+@bot.command(name='removelog', help='Remove the log channel')
+@has_permissions(administrator=True)
+async def remove_log(ctx):
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"""UPDATE guilds
+                        SET transcriptchannel = null
+                        WHERE guildid = {ctx.guild.id};"""
+        cursor.execute(command)
+        response = f"No longer logging transcripts."
+        await ctx.send(response)
 
 
 @bot.command(name='panel', help='Create a panel')
