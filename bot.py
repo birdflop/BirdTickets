@@ -170,7 +170,7 @@ async def saveandclose(channel):
             cursor.execute(command)
             result = cursor.fetchone()
             ticket_owner = bot.get_user(result[0])
-            embedVar = discord.Embed(title='Ticket Transcript', description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached.', color=0x00ffff)
+            embedVar = discord.Embed(title='Ticket Transcript', description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).', color=0x00ffff)
             await ticket_owner.send(embed=embedVar, file=transcript_file_2)
             cursor = db.cursor()
             command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
