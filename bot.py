@@ -155,13 +155,13 @@ async def saveandclose(channel):
                 transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
                 if transcript_channel:
                     transcript, binflop_link = await get_transcript(channel)
+                    transcript_1 = transcript
                     embedVar = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
                     msg_var = await channel.send(embed=embedVar)
-                    await transcript_channel.send(file=transcript)
+                    await transcript_channel.send(file=transcript_1)
                     await transcript_channel.send(binflop_link)
                     embedVar = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x00ff00)
                     await msg_var.edit(embed=embedVar)
-            transcript = await get_transcript(channel)
             cursor = db.cursor()
             print(channel.id)
             command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
@@ -194,7 +194,7 @@ async def get_transcript(channel):
     finally:
         os.remove('transcript.txt')
 
-    transcript = await chat_exporter.raw_export(channel, messages)
+    transcript = await chat_exporter.raw_export(channel, messages, 'America/New_York')
 
     # Convert transcript bytes into .html file
     transcript_file = discord.File(io.BytesIO(transcript.encode()), filename=f"transcript-{channel.name}.html")
