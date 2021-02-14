@@ -12,20 +12,43 @@ import asyncio
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-bot = commands.Bot(command_prefix='-', intents=discord.Intents.all())
+
+async def get_prefix(client, message):
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT prefix FROM guilds WHERE guildid = {message.channel.guild.id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        return result[0]
+
+
+bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
+
+
+@bot.command(name='setprefix', help='Set the ticket category')
+@has_permissions(administrator=True)
+async def set_prefix(ctx, prefix):
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        response = f"Setting prefix to {prefix}"
+        print(f"UPDATE guilds SET prefix = ?' WHERE guildid = {ctx.guild.id};", (prefix, ))
+        cursor.execute(f"UPDATE guilds SET prefix = ? WHERE guildid = {ctx.guild.id};", (prefix, ))
+        await ctx.channel.send(response)
 
 
 @bot.event
 async def on_ready():
     print("I am running")
+    bot.activity = "birdflop.com"
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = """ CREATE TABLE IF NOT EXISTS guilds (
+        command = """CREATE TABLE IF NOT EXISTS guilds (
                         guildid bigint PRIMARY KEY,
                         panelmessage bigint,
                         ticketscategory bigint,
                         nextticketid bigint NOT NULL,
-                        transcriptchannel bigint);"""
+                        transcriptchannel bigint,
+                        prefix varchar(6);"""
         cursor.execute(command)
         command = """CREATE TABLE IF NOT EXISTS tickets (
                         ticketchannel bigint PRIMARY KEY,
@@ -40,7 +63,7 @@ async def on_guild_join(guild):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"""INSERT INTO guilds (guildid, panelmessage, ticketscategory, nextticketid, transcriptchannel)
-                        VALUES({guild.id}, null, null, 1, null);"""
+                        VALUES({guild.id}, null, null, 1, null, '-');"""
         cursor.execute(command)
 
 
@@ -64,6 +87,17 @@ async def add(ctx, user: discord.Member):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        if result[0] > 0:
+            await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
+
+
+@bot.command(name='getprefix', help='Get prefix')
+async def add(ctx, user: discord.Member):
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT prefix FROM guilds WHERE guildid = {ctx.channel.guild.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         if result[0] > 0:
