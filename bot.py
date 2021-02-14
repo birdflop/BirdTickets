@@ -124,15 +124,15 @@ async def help(ctx, command=None):
     if command is None:
         embed_var = discord.Embed(title='BirdTickets Commands', color=0xffff00)
         embed_var.add_field(name="Player commands",
-                            value="""**new** - Create a new ticket
-                            **close** - Close an existing ticket
-                            **add** - Add someone to a ticket
-                            **remove** - Remove someone from a ticket""", inline=False)
+                            value="""__new__ - Create a new ticket
+                            __close__ - Close an existing ticket
+                            __add__ - Add someone to a ticket
+                            __remove__ - Remove someone from a ticket""", inline=False)
         embed_var.add_field(name="Administrator commands",
                             value="""**panel** - Create a support panel
-                            **setprefix** - Change the prefix
-                            **setlog** - Save transcripts to a channel
-                            **setcategory** - Set the ticket category
+                            _setprefix_ - Change the prefix
+                            _setlog_ - Save transcripts to a channel
+                            _setcategory_ - Set the ticket category
                             **removelog** - Stop saving transcripts
                             **resetticketdata** - Reset all ticket data""", inline=False)
         await ctx.channel.send(embed=embed_var)
