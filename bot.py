@@ -135,7 +135,7 @@ async def help(ctx, command=None):
                             setcategory - Set the ticket category
                             removelog - Stop saving transcripts
                             resetticketdata - Reset all ticket data""")
-        ctx.channel.send(embed=embed_var)
+        await ctx.channel.send(embed=embed_var)
 
 
 @bot.command(name='remove', help='Remove someone from a ticket')
