@@ -7,13 +7,12 @@
 6. Add and remove people from tickets.
 
 # Setup:
-1. Invite the bot to your server https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=0&scope=bot
-2. Give it admin permissions. 
+1. Invite the bot to your server https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=126032&scope=bot.
 3. Create a new `tickets` channel category.
 4. Remove `@everyone`'s viewing permissions from `tickets`.
 5. Give your support team permission to the category.
 6. Set the category with `-setcategory`.
-7. Use the `-panel` command wherever you want the panel to be.
+7. (Optional) Use the `-panel` command wherever you want the panel to be.
 8. (Optional) Create a transcript channel with `-setlog`.
 
 # Support

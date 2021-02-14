@@ -126,7 +126,8 @@ async def help(ctx):
                         value="__new__ - Create a new ticket\n"
                               "__close__ - Close an existing ticket\n"
                               "__add__ - Add someone to a ticket\n"
-                              "__remove__ - Remove someone from a ticket")
+                              "__remove__ - Remove someone from a ticket"
+                              "__invite__ - Invite BirdTickets to your serer", inline=False)
     if ctx.author.guild_permissions.administrator:
         embed_var.add_field(name="Admin commands",
                             value="__panel__ - Create a support panel\n"
@@ -137,6 +138,12 @@ async def help(ctx):
                                   "__resetticketdata__ - Reset all ticket data\n", inline=False)
     await ctx.channel.send(embed=embed_var)
 
+
+bot.remove_command('invite')
+@bot.command(name='invite', help='Get the bot''s invite link')
+async def invite(ctx):
+    embed_var = discord.Embed(title='BirdTickets Invite', color=39393, description="https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=126032&scope=bot")
+    await ctx.channel.send(embed=embed_var)
 
 @bot.command(name='remove', help='Remove someone from a ticket')
 async def remove(ctx, user: discord.Member):
