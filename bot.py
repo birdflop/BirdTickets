@@ -129,12 +129,12 @@ async def help(ctx, command=None):
                             __add__ - Add someone to a ticket
                             __remove__ - Remove someone from a ticket""", inline=False)
         embed_var.add_field(name="Administrator commands",
-                            value="""**panel** - Create a support panel
-                            _setprefix_ - Change the prefix
-                            _setlog_ - Save transcripts to a channel
-                            _setcategory_ - Set the ticket category
-                            **removelog** - Stop saving transcripts
-                            **resetticketdata** - Reset all ticket data""", inline=False)
+                            value="""__panel__ - Create a support panel
+                            __setprefix__ - Change the prefix
+                            __setlog__ - Save transcripts to a channel
+                            __setcategory__ - Set the ticket category
+                            __removelog__ - Stop saving transcripts
+                            __resetticketdata__ - Reset all ticket data""", inline=False)
         await ctx.channel.send(embed=embed_var)
 
 
