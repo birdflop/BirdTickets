@@ -17,6 +17,8 @@ messages_limit = 10
 
 
 async def get_prefix(client, message):
+    if isinstance(message.channel, discord.channel.DMChannel):
+        return '-'
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"SELECT prefix FROM guilds WHERE guildid = {message.channel.guild.id} LIMIT 1;"
