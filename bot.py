@@ -143,7 +143,7 @@ bot.remove_command('invite')
 @bot.command(name='invite', help='Get the bot''s invite link')
 async def invite(ctx):
     embed_var = discord.Embed(title='BirdTickets Invite', color=39393, description="https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=126032&scope=bot")
-    await ctx.channel.send(embed=embed_var)
+    await ctx.reply(embed=embed_var)
 
 @bot.command(name='remove', help='Remove someone from a ticket')
 async def remove(ctx, user: discord.Member):
@@ -178,9 +178,9 @@ async def close(ctx):
             result = cursor.fetchone()
             if result:
                 channel = discord.utils.get(ctx.guild.channels, id=result[0])
-                await ctx.channel.send(f"Use that command in {channel.mention}.")
+                await ctx.reply(f"Use that command in {channel.mention}.")
             else:
-                await ctx.channel.send(f"You do not have an open ticket.")
+                await ctx.reply(f"You do not have an open ticket.")
 
 
 async def saveandclose(channel):
@@ -270,7 +270,7 @@ async def set_category(ctx, category_id):
                             SET ticketscategory = {category_id}
                             WHERE guildid = {ctx.guild.id};"""
             cursor.execute(command)
-            await ctx.send(response)
+            await ctx.reply(response)
 
 
 @bot.command(name='query', help='Debug command')
@@ -297,7 +297,7 @@ async def set_log(ctx, channel: discord.TextChannel):
                             SET transcriptchannel = {channel.id}
                             WHERE guildid = {ctx.guild.id};"""
             cursor.execute(command)
-            await ctx.send(response)
+            await ctx.reply(response)
 
 
 @bot.command(name='removelog', help='Remove the log channel')
@@ -312,7 +312,7 @@ async def remove_log(ctx):
                         WHERE guildid = {ctx.guild.id};"""
         cursor.execute(command)
         response = f"No longer logging transcripts."
-        await ctx.send(response)
+        await ctx.reply(response)
 
 
 @bot.command(name='panel', help='Create a panel')
