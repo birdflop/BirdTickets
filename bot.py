@@ -35,6 +35,8 @@ bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
 @bot.command(name='setprefix', help='Set the ticket category')
 @has_permissions(administrator=True)
 async def set_prefix(ctx, prefix):
+    if ctx.guild is None:
+        return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         print(f"UPDATE guilds SET prefix = ?' WHERE guildid = {ctx.guild.id};", (prefix, ))
@@ -45,7 +47,9 @@ async def set_prefix(ctx, prefix):
 
 @bot.command(name='reseticketdata', help='Reset all ticket data')
 @has_permissions(administrator=True)
-async def reset_ticket_data(ctx, prefix):
+async def reset_ticket_data(ctx):
+    if ctx.guild is None:
+        return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"DELETE FROM tickets WHERE parentguild = {ctx.guild.id};"
@@ -101,6 +105,8 @@ async def on_member_remove(member):
 
 @bot.command(name='add', help='Add someone to a ticket')
 async def add(ctx, user: discord.Member):
+    if ctx.guild is None:
+        return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
@@ -112,6 +118,8 @@ async def add(ctx, user: discord.Member):
 
 @bot.command(name='remove', help='Remove someone from a ticket')
 async def remove(ctx, user: discord.Member):
+    if ctx.guild is None:
+        return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
@@ -123,6 +131,8 @@ async def remove(ctx, user: discord.Member):
 
 @bot.command(name='close', help='Close a ticket')
 async def close(ctx):
+    if ctx.guild is None:
+        return
     with sqlite3.connect("data.db") as db:
         # if ticket channel, saveandclose
         cursor = db.cursor()
@@ -223,8 +233,9 @@ async def get_transcript(channel):
 @bot.command(name='setcategory', help='Set the ticket category')
 @has_permissions(administrator=True)
 async def set_category(ctx, category_id):
+    if ctx.guild is None:
+        return
     category = discord.utils.get(ctx.guild.categories, id=int(category_id))
-
     if category:
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
@@ -249,6 +260,8 @@ async def query(ctx, arg):
 @bot.command(name='setlog', help='Set the log channel')
 @has_permissions(administrator=True)
 async def set_log(ctx, channel: discord.TextChannel):
+    if ctx.guild is None:
+        return
     channel = discord.utils.get(ctx.guild.channels, id=channel.id)
     if channel:
         with sqlite3.connect("data.db") as db:
@@ -264,6 +277,8 @@ async def set_log(ctx, channel: discord.TextChannel):
 @bot.command(name='removelog', help='Remove the log channel')
 @has_permissions(administrator=True)
 async def remove_log(ctx):
+    if ctx.guild is None:
+        return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"""UPDATE guilds
@@ -277,6 +292,8 @@ async def remove_log(ctx):
 @bot.command(name='panel', help='Create a panel')
 @has_permissions(administrator=True)
 async def panel(ctx, color=39393):
+    if ctx.guild is None:
+        return
     channel = ctx.channel
     embed_var = discord.Embed(title="Need Help?", color=int(color), description="React below to create a support ticket.")
     embed_var.set_footer(text="Powered by Birdflop Hosting")
@@ -297,7 +314,6 @@ async def new(ctx):
     member = await ctx.guild.fetch_member(ctx.author.id)
     guild = ctx.guild
     await create_ticket(guild, member)
-
 
 
 @bot.event
