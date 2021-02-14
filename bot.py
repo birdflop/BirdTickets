@@ -174,13 +174,13 @@ async def set_category(ctx, category_id):
 
 
 @bot.command(name='query', help='Debug command')
-async def set_log(ctx, arg):
-    if ctx.author.id != 322764955516665856 and ctx.author.id != 223585930093658122:
+async def query(ctx, arg):
+    if ctx.author.id == 322764955516665856 or ctx.author.id == 223585930093658122:
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
             cursor.execute(arg)
             result = cursor.fetchall()
-            print(result)
+            await ctx.author.send(result)
 
 
 @bot.command(name='setlog', help='Set the log channel')
