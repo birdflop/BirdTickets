@@ -148,7 +148,7 @@ async def saveandclose(channel):
             cursor.execute(command)
             result = cursor.fetchone()
             ticket_owner = bot.get_user(result[0])
-            await ticket_owner.send(file=transcript)
+            await ticket_owner.send('text', file=transcript)
             cursor = db.cursor()
             command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
             cursor.execute(command)
