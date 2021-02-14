@@ -119,6 +119,23 @@ async def remove(ctx, user: discord.Member):
 
 @bot.command(name='close', help='Close a ticket')
 async def close(ctx):
+    with sqlite3.connect("data.db") as db:
+        # if ticket channel, saveandclose
+        cursor = db.cursor()
+        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        if result[0] > 0:
+            await saveandclose(ctx.channel)
+        else:
+            # check the user for their ticket channel in that guild
+            cursor = db.cursor()
+            command = f"SELECT ticketchannel FROM tickets WHERE owner = {ctx.author.id} AND parentguild = {ctx.guild.id} LIMIT 1;"
+            cursor.execute(command)
+            result = cursor.fetchone()
+            if result:
+                channel = discord.utils.get(ctx.guild.channels, id=result[0])
+                await ctx.channel.send(f"Use that command in {channel.mention}")
     await saveandclose(ctx.channel)
 
 
