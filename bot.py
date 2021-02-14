@@ -95,17 +95,6 @@ async def add(ctx, user: discord.Member):
             await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
 
 
-@bot.command(name='getprefix', help='Get prefix')
-async def add(ctx, user: discord.Member):
-    with sqlite3.connect("data.db") as db:
-        cursor = db.cursor()
-        command = f"SELECT prefix FROM guilds WHERE guildid = {ctx.channel.guild.id} LIMIT 1;"
-        cursor.execute(command)
-        result = cursor.fetchone()
-        if result[0] > 0:
-            await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
-
-
 @bot.command(name='remove', help='Remove someone from a ticket')
 async def remove(ctx, user: discord.Member):
     with sqlite3.connect("data.db") as db:
@@ -135,7 +124,9 @@ async def close(ctx):
             result = cursor.fetchone()
             if result:
                 channel = discord.utils.get(ctx.guild.channels, id=result[0])
-                await ctx.channel.send(f"Use that command in {channel.mention}")
+                await ctx.channel.send(f"Use that command in {channel.mention}.")
+            else:
+                await ctx.channel.send(f"You do not have an open ticket.")
     await saveandclose(ctx.channel)
 
 
