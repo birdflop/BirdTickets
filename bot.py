@@ -210,7 +210,6 @@ async def make_raw_transcript(ctx):
                 text_transcript.write(created_at + " " + message.author.name + "#" + str(
                     message.author.discriminator) + " | " + message.content + "\n")
         with open("transcript.txt", "r") as text_transcript:
-            print(text_transcript.read())
             req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
             key = json.loads(req.content)['key']
         await ctx.send('https://bin.birdflop.com/' + key)
