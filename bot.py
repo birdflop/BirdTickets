@@ -6,10 +6,10 @@ from discord.ext import commands
 import sqlite3
 import chat_exporter
 import io
-from bs4 import BeautifulSoup
 import asyncio
 import requests
 import json
+import random
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -157,7 +157,7 @@ async def saveandclose(channel):
             if transcript_channel_id:
                 transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
                 if transcript_channel:
-                    transcript_file_1, transcript_file_2, binflop_link = await get_transcript(channel)
+                    transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
                     embedVar = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
                     msg_var = await channel.send(embed=embedVar)
                     await transcript_channel.send(file=transcript_file_1)
@@ -170,7 +170,14 @@ async def saveandclose(channel):
             cursor.execute(command)
             result = cursor.fetchone()
             ticket_owner = bot.get_user(result[0])
-            embedVar = discord.Embed(title='Ticket Transcript', description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).', color=0x00ffff)
+            if truncated == True:
+                embedVar = discord.Embed(title='Ticket Transcript',
+                                         description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript was over 2000 messages, so it has been truncated to the most recent 2000. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                         color=0x00ffff)
+            else:
+                embedVar = discord.Embed(title='Ticket Transcript',
+                                         description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                         color=0x00ffff)
             await ticket_owner.send(embed=embedVar, file=transcript_file_2)
             cursor = db.cursor()
             command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
@@ -181,15 +188,20 @@ async def saveandclose(channel):
 async def get_transcript(channel):
     messages_limit = 2000
     messages = await channel.history(limit=messages_limit).flatten()
+    # Warn if file reaches message number limit
+    truncated = ''
+    if len(messages) == messages_limit:
+        truncated = '-truncated'
+    transcript_key = random.randint(1, 999999999)
     try:
-        with open("transcript.txt", "w", encoding="utf-8") as text_transcript:
+        with open(f"transcript-{transcript_key}.txt", "w", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
                 if message.content == "":
                     message.content = "Non-Text Information: See HTML transcript for more information."
                 text_transcript.write(created_at + " " + message.author.name + "#" + str(
                     message.author.discriminator) + " | " + message.content + "\n")
-        with open("transcript.txt", "r") as text_transcript:
+        with open(f"transcript-{transcript_key}.txt", "r") as text_transcript:
             req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
             key = json.loads(req.content)['key']
         binflop_link = 'https://bin.birdflop.com/' + key
@@ -198,20 +210,11 @@ async def get_transcript(channel):
 
     transcript = await chat_exporter.raw_export(channel, messages, 'America/New_York')
 
-    # make transcript bytes
-    transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()), filename=f'transcript-{channel.name}.html'), discord.File(io.BytesIO(transcript.encode()), filename=f'transcript-{channel.name}.html')
-
-    # Check number of messages
-    soup = BeautifulSoup(transcript, "html.parser")
-    messages = soup.find("div", class_="info__channel-message-count").getText().split(" ")[0]
-
-    # Warn if file reaches message number limit
-    if int(messages) == messages_limit:
-        await channel.send(
-            f'WARNING: Channel contains over {messages_limit} messages, so the transcript may have been truncated.')
+    # make transcript file
+    transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
 
     # Send transcript
-    return transcript_file_1, transcript_file_2, binflop_link
+    return transcript_file_1, transcript_file_2, binflop_link, bool(truncated)
 
 @bot.command(name='setcategory', help='Set the ticket category')
 @has_permissions(administrator=True)
