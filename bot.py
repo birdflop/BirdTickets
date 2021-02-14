@@ -60,17 +60,17 @@ async def on_ready():
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = """CREATE TABLE IF NOT EXISTS guilds (
-                        guildid bigint PRIMARY KEY,
-                        panelmessage bigint,
-                        ticketscategory bigint,
-                        nextticketid bigint NOT NULL,
-                        transcriptchannel bigint,
-                        prefix varchar(6) DEFAULT '-');"""
+                        guildid int PRIMARY KEY,
+                        panelmessage int,
+                        ticketscategory int,
+                        nextticketid int NOT NULL,
+                        transcriptchannel int,
+                        prefix char(2) DEFAULT '-');"""
         cursor.execute(command)
         command = """CREATE TABLE IF NOT EXISTS tickets (
-                        ticketchannel bigint PRIMARY KEY,
-                        owner bigint NOT NULL,
-                        parentguild bigint NOT NULL,
+                        ticketchannel int PRIMARY KEY,
+                        owner int NOT NULL,
+                        parentguild int NOT NULL,
                         FOREIGN KEY (parentguild) REFERENCES guilds (guildid));"""
         cursor.execute(command)
 
