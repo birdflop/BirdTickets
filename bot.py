@@ -148,7 +148,8 @@ async def saveandclose(channel):
             cursor.execute(command)
             result = cursor.fetchone()
             ticket_owner = bot.get_user(result[0])
-            await ticket_owner.send('text', file=transcript)
+            embedVar = discord.Embed(title='Ticket Transcript', description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached.', color=0x00ffff)
+            await ticket_owner.send(embed=embedVar, file=transcript)
             cursor = db.cursor()
             command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
             cursor.execute(command)
