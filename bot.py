@@ -13,7 +13,7 @@ import random
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-messages_limit = 10
+messages_limit = 2000
 
 
 async def get_prefix(client, message):
@@ -176,7 +176,7 @@ async def saveandclose(channel):
             if truncated == True:
                 global messages_limit
                 embedVar = discord.Embed(title='Ticket Transcript',
-                                         description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained {messages_limit}+ messages, so it has been truncated to the most recent {messages_limit}. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                         description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained {messages_limit}+ messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
                                          color=0x00ffff)
             else:
                 embedVar = discord.Embed(title='Ticket Transcript',
