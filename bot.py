@@ -249,7 +249,7 @@ async def set_log(ctx, channel: discord.TextChannel):
     if channel:
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
-            response = f"Setting logs to {channel}"
+            response = f"Setting logs to {channel.mention}"
             command = f"""UPDATE guilds
                             SET transcriptchannel = {channel.id}
                             WHERE guildid = {ctx.guild.id};"""
