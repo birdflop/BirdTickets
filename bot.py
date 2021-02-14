@@ -136,9 +136,11 @@ async def saveandclose(channel):
                 transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
                 if transcript_channel:
                     transcript = await get_transcript(channel)
-                    await channel.send('Please wait, preparing transcript...')
+                    embedVar = discord.Embed(title='Preparing Transcript', description='Please wait...', color='0xffff00')
+                    msg_var = await channel.send(embed=embedVar)
                     await transcript_channel.send(file=transcript)
-                    await channel.send('Transcript successfully created!')
+                    embedVar = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color='0x00ff00')
+                    await msg_var.edit(embed=embedVar)
             transcript = await get_transcript(channel)
             cursor = db.cursor()
             print(channel.id)
