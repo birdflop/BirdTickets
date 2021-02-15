@@ -245,7 +245,7 @@ async def get_transcript(channel):
             key = json.loads(req.content)['key']
         binflop_link = 'https://bin.birdflop.com/' + key
     finally:
-        os.remove(f'transcript-{transcript_key}.txt')
+        os.remove(f'transcript-{channel.id}.txt')
 
     transcript = await chat_exporter.raw_export(channel, messages, 'America/New_York')
 
