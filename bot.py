@@ -383,6 +383,7 @@ async def create_ticket(guild, member):
             command = f"UPDATE guilds SET nextticketid = {nextid + 1} WHERE guildid = {guild.id};"
             cursor.execute(command)
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
+            channel_id = channel.id
             await channel.set_permissions(member, read_messages=True, send_messages=True)
             await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.")
             cursor = db.cursor()
@@ -392,14 +393,14 @@ async def create_ticket(guild, member):
             db.commit()
             cursor.close()
             await asyncio.sleep(30*60)
-            history = channel.history()
-            if history:
-                if not await history.get(author__id=member.id):
+            channel = bot.get_channel(channel_id)
+            if channel:
+                if not await channel.history.get(author__id=member.id):
                     await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not respond.")
                     await asyncio.sleep(30*60)
-                    history = channel.history()
-                    if history:
-                        if not await history.get(author__id=member.id):
+                    channel = bot.get_channel(channel_id)
+                    if channel:
+                        if not await channel.history.get(author__id=member.id):
                             await saveandclose(channel)
 
 
