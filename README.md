@@ -19,6 +19,5 @@
 If you run into any issues or bugs, you can ask for help in the Birdflop Hosting Discord: https://discord.gg/ZrRvTMu.
 
 # TODO
-1. Setticketowner command
-2. Close tickets with lock reaction
-3. Close inactive tickets
+1. Close tickets with lock reaction
+2. Close inactive tickets maybe
