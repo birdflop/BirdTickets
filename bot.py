@@ -9,7 +9,6 @@ import io
 import asyncio
 import requests
 import json
-import random
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
