@@ -177,7 +177,7 @@ async def close(ctx):
             cursor.execute(command)
             result = cursor.fetchone()
             if result:
-                channel = discord.utils.get(ctx.guild.channels, id=result[0])
+                channel = ctx.guild.get_channel(result[0])
                 await ctx.reply(f"Use that command in {channel.mention}.")
             else:
                 await ctx.reply(f"You do not have an open ticket.")
@@ -255,6 +255,7 @@ async def get_transcript(channel):
 
     # Send transcript
     return transcript_file_1, transcript_file_2, binflop_link, bool(truncated)
+
 
 @bot.command(name='setcategory', help='Set the ticket category')
 @has_permissions(administrator=True)
@@ -365,30 +366,20 @@ async def on_raw_reaction_add(payload):
 async def create_ticket(guild, member):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT * FROM tickets WHERE parentguild = {guild.id} AND owner = {member.id} LIMIT 1;"
+        command = f"SELECT ticketchannel FROM tickets WHERE parentguild = {guild.id} AND owner = {member.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
         if result:
-            user = member
-            mention = user.mention
-            reply = f"You already have a ticket open. Please state your issue here {mention}"
-            cursor = db.cursor()
-            command = f"SELECT ticketchannel FROM tickets WHERE owner = {member.id} AND parentguild = {guild.id} LIMIT 1;"
-            cursor.execute(command)
-            result = cursor.fetchone()
             channel = discord.utils.get(guild.channels, id=result[0])
+            reply = f"You already have a ticket open. Please state your issue here {member.mention}"
             await channel.send(reply)
         else:
             cursor = db.cursor()
-            command = f"SELECT ticketscategory FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
+            command = f"SELECT ticketscategory, nextticketid FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
             category = discord.utils.get(guild.categories, id=result[0])
-            cursor = db.cursor()
-            command = f"SELECT nextticketid FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
-            cursor.execute(command)
-            result = cursor.fetchone()
-            nextid = result[0]
+            nextid = result[1]
             cursor = db.cursor()
             command = f"UPDATE guilds SET nextticketid = {nextid + 1} WHERE guildid = {guild.id};"
             cursor.execute(command)
