@@ -82,7 +82,7 @@ async def on_ready():
 async def on_guild_join(guild):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"""INSERT INTO guilds (guildid, panelmessage, ticketscategory, nextticketid, transcriptchannel)
+        command = f"""INSERT INTO guilds (guildid, panelmessage, ticketscategory, nextticketid, transcriptchannel, prefix)
                         VALUES({guild.id}, null, null, 1, null, '-');"""
         cursor.execute(command)
 
