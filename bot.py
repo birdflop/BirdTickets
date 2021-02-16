@@ -240,7 +240,7 @@ async def get_transcript(channel):
                 text_transcript.write(created_at + " " + message.author.name + "#" + str(
                     message.author.discriminator) + " | " + message.content + "\n")
         with open(f"transcript-{channel.id}.txt", "r", encoding="utf-8") as text_transcript:
-            req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
+            req = requests.post('https://bin.birdflop.com/documents', data=text_transcript)
             key = json.loads(req.content)['key']
         binflop_link = 'https://bin.birdflop.com/' + key
     finally:
