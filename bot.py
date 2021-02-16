@@ -237,7 +237,7 @@ async def saveandclose(channel):
 async def get_transcript(channel):
     global messages_limit
     messages = await channel.history(limit=messages_limit).flatten()
-    messages_html = copy.copy(messages)
+    messages_html = copy.deepcopy(messages)
     # Warn if file reaches message number limit
     truncated = ''
     if len(messages) == messages_limit:
