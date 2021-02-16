@@ -240,6 +240,9 @@ async def get_transcript(channel):
     truncated = ''
     if len(messages) == messages_limit:
         truncated = '-truncated'
+
+    transcript = await chat_exporter.raw_export(channel, messages, 'America/New_York')
+
     try:
         with open(f"transcript-{channel.id}.txt", "w", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
@@ -254,8 +257,6 @@ async def get_transcript(channel):
         binflop_link = 'https://bin.birdflop.com/' + key
     finally:
         os.remove(f'transcript-{channel.id}.txt')
-
-    transcript = await chat_exporter.raw_export(channel, messages, 'America/New_York')
 
     # make transcript file
     transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
