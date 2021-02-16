@@ -125,8 +125,8 @@ async def help(ctx):
                         value="__new__ - Create a new ticket\n"
                               "__close__ - Close an existing ticket\n"
                               "__add__ - Add someone to a ticket\n"
-                              "__remove__ - Remove someone from a ticket"
-                              "__invite__ - Invite BirdTickets to your serer", inline=False)
+                              "__remove__ - Remove someone from a ticket\n"
+                              "__invite__ - Invite BirdTickets to your server", inline=False)
     if ctx.author.guild_permissions.administrator:
         embed_var.add_field(name="Admin commands",
                             value="__panel__ - Create a support panel\n"
@@ -384,7 +384,9 @@ async def create_ticket(guild, member):
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
             channel_id = channel.id
             await channel.set_permissions(member, read_messages=True, send_messages=True)
-            await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.")
+            embed = discord.Embed(title="Support Ticket", description=f"Hello {member.mention}, please explain your issue in as much detail as possible.")
+            embed.add_field(name="Closing Tickets", value=f"React with the lock emoji or type {get_prefix}close to close the ticket")
+            await channel.send(embed=embed)
             cursor = db.cursor()
             command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
                             VALUES({channel.id}, {member.id}, {guild.id});"""
