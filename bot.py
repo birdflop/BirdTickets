@@ -27,6 +27,15 @@ async def get_prefix(client, message):
             return result[0]
         return '-'
 
+async def select_prefix(guild_id):
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT prefix FROM guilds WHERE guildid = {guild_id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        if result:
+            return result[0]
+        return '-'
 
 bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
 
@@ -384,7 +393,7 @@ async def create_ticket(guild, member):
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
             channel_id = channel.id
             await channel.set_permissions(member, read_messages=True, send_messages=True)
-            embed = discord.Embed(title="Closing Tickets", description=f"React with the lock emoji or type {channel.prefix}close to close the ticket", color=39393)
+            embed = discord.Embed(title="Closing Tickets", description=f"React with the lock emoji or type {await select_prefix(channel.guild.id)}close to close the ticket", color=39393)
             await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.", embed=embed)
             cursor = db.cursor()
             command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
