@@ -249,10 +249,17 @@ async def get_transcript(channel):
         with open(f"transcript-{channel.id}.txt", "w", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
-                if message.content == "":
-                    message.content = "Non-Text Information: See HTML transcript for more information."
-                text_transcript.write(created_at + " " + message.author.name + "#" + str(
-                    message.author.discriminator) + " | " + message.content + "\n")
+                msg = message.content
+                if not msg:
+                    if message.embeds:
+                        for embed in message.embeds:
+                            if embed.title:
+                                msg += "\n" + embed.title
+                            if embed.description:
+                                msg += "\n" + embed.description
+                    else:
+                        msg = "Unknown message: See HTML transcript for more information."
+                text_transcript.write(f"{created_at} {message.author.name}#{message.author.discriminator} | {msg}\n")
         with open(f"transcript-{channel.id}.txt", "r", encoding="utf-8") as text_transcript:
             req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read().encode('utf-8'))
             key = json.loads(req.content)['key']
