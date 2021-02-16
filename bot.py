@@ -37,12 +37,16 @@ bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
 async def set_prefix(ctx, prefix):
     if ctx.guild is None:
         return
-    with sqlite3.connect("data.db") as db:
-        cursor = db.cursor()
-        print(f"UPDATE guilds SET prefix = ?' WHERE guildid = {ctx.guild.id};", (prefix, ))
-        cursor.execute(f"UPDATE guilds SET prefix = ? WHERE guildid = {ctx.guild.id};", (prefix, ))
-        response = f"Prefix set to {prefix}."
-        await ctx.channel.send(response)
+    if len(prefix) <= 2:
+        with sqlite3.connect("data.db") as db:
+            cursor = db.cursor()
+            print(f"UPDATE guilds SET prefix = ?' WHERE guildid = {ctx.guild.id};", (prefix,))
+            cursor.execute(f"UPDATE guilds SET prefix = ? WHERE guildid = {ctx.guild.id};", (prefix,))
+            response = f"Prefix set to {prefix}."
+            await ctx.channel.send(response)
+    else:
+        ctx.reply(f"{prefix} is too long. The maximum prefix length is 2.")
+
 
 
 @bot.command(name='reseticketdata', help='Reset all ticket data')
@@ -237,9 +241,17 @@ async def get_transcript(channel):
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
                 if message.content == "":
-                    message.content = "Non-Text Information: See HTML transcript for more information."
-                text_transcript.write(created_at + " " + message.author.name + "#" + str(
-                    message.author.discriminator) + " | " + message.content + "\n")
+                    if message.embeds:
+                        for embed in message.embeds:
+                            if embed.title:
+                                content = embed.title
+                            if embed.description:
+                                content += "\n" + embed.description
+                    else:
+                        content = "Non-Text Information: See HTML transcript for more information."
+                else:
+                    content = message.content
+                text_transcript.write(f"{created_at} {message.author.name}#{message.author.discriminator} | {content}\n")
         with open(f"transcript-{channel.id}.txt", "r") as text_transcript:
             req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
             key = json.loads(req.content)['key']
