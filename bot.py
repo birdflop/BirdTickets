@@ -9,6 +9,7 @@ import io
 import asyncio
 import requests
 import json
+import codecs
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -239,14 +240,8 @@ async def get_transcript(channel):
                     message.content = "Non-Text Information: See HTML transcript for more information."
                 text_transcript.write(created_at + " " + message.author.name + "#" + str(
                     message.author.discriminator) + " | " + message.content + "\n")
-        with open(f"transcript-{channel.id}.txt", "r", encoding="utf-8") as text_transcript:
-            print("READING")
-            print(text_transcript.read())
-            print("IN UTF-8")
-            print(text_transcript.encode("utf-8"))
-            print("IN UTF-8 2.0")
-            print(text_transcript.encode("utf-8").read())
-            req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.encode("utf-8"))
+        with codecs.open(f"transcript-{channel.id}.txt", "r", encoding="utf-8") as text_transcript:
+            req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
             key = json.loads(req.content)['key']
         binflop_link = 'https://bin.birdflop.com/' + key
     finally:
