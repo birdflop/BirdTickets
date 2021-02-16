@@ -20,4 +20,5 @@ If you run into any issues or bugs, you can ask for help in the Birdflop Hosting
 
 # TODO
 1. Close tickets with lock reaction
-2. Close inactive tickets maybe
+2. Close inactive tickets
+3. Custom messages/reactions
