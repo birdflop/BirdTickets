@@ -9,6 +9,7 @@ import io
 import asyncio
 import requests
 import json
+import copy
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -236,7 +237,7 @@ async def saveandclose(channel):
 async def get_transcript(channel):
     global messages_limit
     messages = await channel.history(limit=messages_limit).flatten()
-    messages_html = messages
+    messages_html = copy.copy(messages)
     # Warn if file reaches message number limit
     truncated = ''
     if len(messages) == messages_limit:
