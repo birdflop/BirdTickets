@@ -9,7 +9,6 @@ import io
 import asyncio
 import requests
 import json
-import random
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -28,6 +27,15 @@ async def get_prefix(client, message):
             return result[0]
         return '-'
 
+async def select_prefix(guild_id):
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT prefix FROM guilds WHERE guildid = {guild_id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        if result:
+            return result[0]
+        return '-'
 
 bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
 
@@ -87,7 +95,7 @@ async def on_ready():
 async def on_guild_join(guild):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"""INSERT INTO guilds (guildid, panelmessage, ticketscategory, nextticketid, transcriptchannel)
+        command = f"""INSERT INTO guilds (guildid, panelmessage, ticketscategory, nextticketid, transcriptchannel, prefix)
                         VALUES({guild.id}, null, null, 1, null, '-');"""
         cursor.execute(command)
 
@@ -130,8 +138,8 @@ async def help(ctx):
                         value="__new__ - Create a new ticket\n"
                               "__close__ - Close an existing ticket\n"
                               "__add__ - Add someone to a ticket\n"
-                              "__remove__ - Remove someone from a ticket"
-                              "__invite__ - Invite BirdTickets to your serer", inline=False)
+                              "__remove__ - Remove someone from a ticket\n"
+                              "__invite__ - Invite BirdTickets to your server", inline=False)
     if ctx.author.guild_permissions.administrator:
         embed_var.add_field(name="Admin commands",
                             value="__panel__ - Create a support panel\n"
@@ -232,34 +240,27 @@ async def saveandclose(channel):
 async def get_transcript(channel):
     global messages_limit
     messages = await channel.history(limit=messages_limit).flatten()
+    messages_html = messages[:]
     # Warn if file reaches message number limit
     truncated = ''
     if len(messages) == messages_limit:
         truncated = '-truncated'
     try:
-        with open(f"transcript-{channel.id}.txt", "w", encoding="Latin-1") as text_transcript:
+        with open(f"transcript-{channel.id}.txt", "w", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
                 if message.content == "":
-                    if message.embeds:
-                        for embed in message.embeds:
-                            if embed.title:
-                                content = embed.title
-                            if embed.description:
-                                content += "\n" + embed.description
-                    else:
-                        content = "Non-Text Information: See HTML transcript for more information."
-                else:
-                    content = message.content
-                text_transcript.write(f"{created_at} {message.author.name}#{message.author.discriminator} | {content}\n")
-        with open(f"transcript-{channel.id}.txt", "r") as text_transcript:
-            req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read())
+                    message.content = "Non-Text Information: See HTML transcript for more information."
+                text_transcript.write(created_at + " " + message.author.name + "#" + str(
+                    message.author.discriminator) + " | " + message.content + "\n")
+        with open(f"transcript-{channel.id}.txt", "r", encoding="utf-8") as text_transcript:
+            req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read().encode('utf-8'))
             key = json.loads(req.content)['key']
         binflop_link = 'https://bin.birdflop.com/' + key
     finally:
         os.remove(f'transcript-{channel.id}.txt')
 
-    transcript = await chat_exporter.raw_export(channel, messages, 'America/New_York')
+    transcript = await chat_exporter.raw_export(channel, messages_html, 'America/New_York')
 
     # make transcript file
     transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
@@ -397,7 +398,9 @@ async def create_ticket(guild, member):
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
             channel_id = channel.id
             await channel.set_permissions(member, read_messages=True, send_messages=True)
-            await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.")
+            embed = discord.Embed(title="Closing Tickets", description=f"React with 🔒 or type `{await select_prefix(guild.id)}close` to close the ticket", color=39393)
+            ticket_message = await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.", embed=embed)
+            await ticket_message.add_reaction("🔒")
             cursor = db.cursor()
             command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
                             VALUES({channel.id}, {member.id}, {guild.id});"""
