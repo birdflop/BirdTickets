@@ -384,8 +384,7 @@ async def create_ticket(guild, member):
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
             channel_id = channel.id
             await channel.set_permissions(member, read_messages=True, send_messages=True)
-            prefix = await get_prefix
-            embed = discord.Embed(title="Closing Tickets", description=f"React with the lock emoji or type {prefix}close to close the ticket", color=39393)
+            embed = discord.Embed(title="Closing Tickets", description=f"React with the lock emoji or type {channel.prefix}close to close the ticket", color=39393)
             await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.", embed=embed)
             cursor = db.cursor()
             command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
