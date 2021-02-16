@@ -232,7 +232,7 @@ async def get_transcript(channel):
     if len(messages) == messages_limit:
         truncated = '-truncated'
     try:
-        with open(f"transcript-{channel.id}.txt", "w", encoding="Latin-1") as text_transcript:
+        with open(f"transcript-{channel.id}.txt", "w", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
                 if message.content == "":
