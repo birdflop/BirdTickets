@@ -374,13 +374,13 @@ async def on_raw_reaction_add(payload):
         cursor.execute(command)
         result = cursor.fetchone()
         if result[0] > 0:
-            if payload.emoji.name == "🎟️"
-            guild = bot.get_guild(payload.guild_id)
-            channel = discord.utils.get(guild.channels, id=payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
-            member = await guild.fetch_member(payload.user_id)
-            await message.remove_reaction('🎟️', member)
-            await create_ticket(guild, member)
+            if payload.emoji.name == "🎟️":
+                guild = bot.get_guild(payload.guild_id)
+                channel = discord.utils.get(guild.channels, id=payload.channel_id)
+                message = await channel.fetch_message(payload.message_id)
+                member = await guild.fetch_member(payload.user_id)
+                await message.remove_reaction('🎟️', member)
+                await create_ticket(guild, member)
         elif payload.emoji.name == "🔒":
             command = f"SELECT COUNT(*) FROM tickets WHERE ticketmessage = {payload.message_id} LIMIT 1;"
             cursor.execute(command)
