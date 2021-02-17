@@ -380,6 +380,13 @@ async def on_raw_reaction_add(payload):
             member = await guild.fetch_member(payload.user_id)
             await message.remove_reaction('🎟️', member)
             await create_ticket(guild, member)
+        else:
+            command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
+            cursor.execute(command)
+            result = cursor.fetchone()
+            if result[0] > 0:
+                guild = bot.get_guild(payload.guild_id)
+                await saveandclose(discord.utils.get(guild.channels, id=payload.channel_id))
 
 
 async def create_ticket(guild, member):
