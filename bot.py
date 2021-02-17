@@ -374,14 +374,15 @@ async def on_raw_reaction_add(payload):
         cursor.execute(command)
         result = cursor.fetchone()
         if result[0] > 0:
+            if payload.emoji.name == "🎟️"
             guild = bot.get_guild(payload.guild_id)
             channel = discord.utils.get(guild.channels, id=payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             member = await guild.fetch_member(payload.user_id)
             await message.remove_reaction('🎟️', member)
             await create_ticket(guild, member)
-        else:
-            command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
+        elif payload.emoji.name == "🔒":
+            command = f"SELECT COUNT(*) FROM tickets WHERE ticketmessage = {payload.message_id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
             if result[0] > 0:
@@ -416,8 +417,8 @@ async def create_ticket(guild, member):
             ticket_message = await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.", embed=embed)
             await ticket_message.add_reaction("🔒")
             cursor = db.cursor()
-            command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
-                            VALUES({channel.id}, {member.id}, {guild.id});"""
+            command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild, ticketmessage)
+                            VALUES({channel.id}, {member.id}, {guild.id}, {ticket_message.id});"""
             cursor.execute(command)
             db.commit()
             cursor.close()
