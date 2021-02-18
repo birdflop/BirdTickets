@@ -1,3 +1,5 @@
+Premium tickets without the premium.
+
 # Features
 1. Automatically close tickets if the ticket is left empty 1 hour after creation.
 2. Automatically close tickets if the ticket creator leaves the Discord.
@@ -19,6 +21,5 @@
 If you run into any issues or bugs, you can ask for help in the Birdflop Hosting Discord: https://discord.gg/ZrRvTMu.
 
 # TODO
-1. Close tickets with lock reaction
-2. Close inactive tickets
-3. Custom messages/reactions
+1. Close inactive tickets
+2. Custom messages/reactions
