@@ -416,7 +416,7 @@ async def on_raw_reaction_add(payload):
             channel = bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             for r in message.reactions:
-                if r.me and r.name == "🔒" and r.count > 1:
+                if r.me and r.emoji == "🔒" and r.count > 1:
                     cursor = db.cursor()
                     command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
                     cursor.execute(command)
@@ -485,16 +485,15 @@ async def repeating_task():
         if result:
             print("result " + str(result))
             for r in result:
-                print("R " + str(r))
-                print(r[0])
                 channel = await bot.fetch_channel(r[0])
                 if channel.topic is None:
                     history = await channel.history(limit=5).flatten()
-                    print(history)
-                    print(history[0])
+                    #print(history)
+                    #print(history[0] is most recent)
                     # <Message id=812431356948250634 channel=<TextChannel id=812431354775076865 name='ticket-60' position=13
                     # nsfw=False news=False category_id=766130777875939368> type=<MessageType.default: 0> author=<User
                     # id=809975422640717845 name='BirdTickets' discriminator='9191' bot=True> flags=<MessageFlags value=0>>
+
                     # TODO
                     # if the last person who talked was not the ticket owner
                         # if it's been between 24h and 24h1m since the last person talked
