@@ -470,4 +470,32 @@ async def create_ticket(guild, member):
                             await saveandclose(channel)
 
 
+@tasks.loop(seconds=60)
+async def repeating_task():
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    if current_time == '04:00:00':
+        print(current_time)
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT ticketchannel, owner FROM tickets;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        if result:
+            for r in result:
+                channel = bot.get_channel(r[0])
+                if channel.description is None:
+                    history = await channel.history.get(limit=5)
+                    # TODO
+                    # if the last person who talked was not the ticket owner
+                        # if it's been between 24h and 24h1m since the last person talked
+                            # send "you there?"
+                        # if it's been between 48h and 48h1m since anyone talked (except for the bot)
+                            # write inactive
+                            # saveandclose
+
+
+
+
+repeating_task.start()
 bot.run(TOKEN)
