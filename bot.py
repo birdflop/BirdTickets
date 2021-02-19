@@ -2,13 +2,14 @@ import os
 import discord
 from discord.ext.commands import has_permissions
 from dotenv import load_dotenv
-from discord.ext import commands
+from discord.ext import commands, tasks
 import sqlite3
 import chat_exporter
 import io
 import asyncio
 import requests
 import json
+from datetime import datetime
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -480,12 +481,20 @@ async def repeating_task():
         cursor = db.cursor()
         command = f"SELECT ticketchannel, owner FROM tickets;"
         cursor.execute(command)
-        result = cursor.fetchone()
+        result = cursor.fetchall()
         if result:
+            print("result " + str(result))
             for r in result:
-                channel = bot.get_channel(r[0])
-                if channel.description is None:
-                    history = await channel.history.get(limit=5)
+                print("R " + str(r))
+                print(r[0])
+                channel = await bot.fetch_channel(r[0])
+                if channel.topic is None:
+                    history = await channel.history(limit=5).flatten()
+                    print(history)
+                    print(history[0])
+                    # <Message id=812431356948250634 channel=<TextChannel id=812431354775076865 name='ticket-60' position=13
+                    # nsfw=False news=False category_id=766130777875939368> type=<MessageType.default: 0> author=<User
+                    # id=809975422640717845 name='BirdTickets' discriminator='9191' bot=True> flags=<MessageFlags value=0>>
                     # TODO
                     # if the last person who talked was not the ticket owner
                         # if it's been between 24h and 24h1m since the last person talked
@@ -493,7 +502,6 @@ async def repeating_task():
                         # if it's been between 48h and 48h1m since anyone talked (except for the bot)
                             # write inactive
                             # saveandclose
-
 
 
 
