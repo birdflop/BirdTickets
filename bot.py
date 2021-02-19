@@ -363,6 +363,35 @@ async def new(ctx):
     await create_ticket(guild, member)
 
 
+@bot.command(name='persist', help='Make the ticket persist')
+async def persist(ctx):
+    if ctx.guild is None:
+        return
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        if result[0] > 0:
+            ctx.channel.topic = "persist"
+            await ctx.reply("This ticket will now persist")
+
+
+@bot.command(name='unpersist', help='Make the ticket unpersist')
+async def unpersist(ctx):
+    if ctx.guild is None:
+        return
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+        if result[0] > 0:
+            ctx.channel.topic = None
+            await ctx.reply("This ticket will no longer persist")
+
+
+
 @bot.event
 async def on_raw_reaction_add(payload):
     if payload.user_id == bot.user.id:
