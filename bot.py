@@ -488,6 +488,11 @@ async def repeating_task():
             for r in result:
                 channel = await bot.fetch_channel(r[0])
                 if channel.topic is None:
+                    # TODO
+                    # this should be redone
+                    # get the most recent message by the ticket owner, and then the most recent message by a nonbot.
+                    # and then we check if the nonbot is more recent than the ticket owner.
+                    # if ticket owner never sent a message (ie, they deleted it), then enter the if marked below
                     history = await channel.history(limit=5).flatten()
                     most_recent_person_message = None
                     for m in history:
@@ -495,12 +500,12 @@ async def repeating_task():
                             author = m.author
                             if not author.bot:
                                 most_recent_person_message = m
-                    if most_recent_person_message.author.id != r[1]:
+                    if most_recent_person_message.author.id != r[1]:  # this needs to be changed to do the comments above
                         binary_messageid = bin(most_recent_person_message.id).replace("0b", "")
                         binary_time = int(binary_messageid[:-22])
                         timestamp = int(str(binary_time), 2)
                         timestamp += 1420070400000
-                        if 86400000 <= now - timestamp < 86460000:  # if its been 24h
+                        if 86400000 <= now - timestamp < 86460000:
                             channel.send("This ticket has been inactive for 24h. If the issue has been resolved, use -close. Otherwise, say -persist")
                         elif 172800000 <= now - timestamp < 172860000:
                             channel.send("This ticket has been inactive for 48h. Closing...")
