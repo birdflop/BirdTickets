@@ -488,20 +488,21 @@ async def repeating_task():
                 channel = await bot.fetch_channel(r[0])
                 if channel.topic is None:
                     history = await channel.history(limit=5).flatten()
-                    #print(history)
-                    #print(history[0] is most recent)
-                    # <Message id=812431356948250634 channel=<TextChannel id=812431354775076865 name='ticket-60' position=13
-                    # nsfw=False news=False category_id=766130777875939368> type=<MessageType.default: 0> author=<User
-                    # id=809975422640717845 name='BirdTickets' discriminator='9191' bot=True> flags=<MessageFlags value=0>>
-
-                    # TODO
-                    # if the last person who talked was not the ticket owner
+                    most_recent_person = None
+                    for m in history:
+                        if most_recent_person is None:
+                            author = m.author
+                            if not author.bot:
+                                most_recent_person = author
+                    if most_recent_person.id != r[1]:
+                        print(now)
+                        # Todo
+                        # calculate time since ticket
                         # if it's been between 24h and 24h1m since the last person talked
-                            # send "you there?"
+                            # channel.send("This ticket has been inactive for 24h. If the issue has been resolved, use -close. Otherwise, -persist
                         # if it's been between 48h and 48h1m since anyone talked (except for the bot)
-                            # write inactive
+                            # channel.send("This ticket has been inactive for 48h. Closing...
                             # saveandclose
-
 
 
 repeating_task.start()
