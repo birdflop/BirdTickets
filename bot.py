@@ -490,8 +490,8 @@ async def repeating_task():
                 if channel.topic is None:
                     # TODO
                     # this should be redone
-                    # get the most recent message by the ticket owner, and then the most recent message by a nonbot.
-                    # and then we check if the nonbot is more recent than the ticket owner.
+                    # get the most recent message by the ticket owner, and then the most recent message by (not birdticket and not ticket owner).
+                    # and then the if statement below checks if the latter is more recent than the ticket owner.
                     # if ticket owner never sent a message (ie, they deleted it), then enter the if marked below
                     history = await channel.history(limit=5).flatten()
                     most_recent_person_message = None
