@@ -56,7 +56,6 @@ async def set_prefix(ctx, prefix):
         ctx.reply(f"{prefix} is too long. The maximum prefix length is 2.")
 
 
-
 @bot.command(name='reseticketdata', help='Reset all ticket data')
 @has_permissions(administrator=True)
 async def reset_ticket_data(ctx):
@@ -107,12 +106,13 @@ async def on_member_remove(member):
         command = f"SELECT ticketchannel FROM tickets WHERE owner = {member.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        for r in result:
-            channel = await bot.fetch_channel(r)
-            guild = channel.guild
-            if discord.utils.get(guild.members, id=int(member.id)) is None:
-                await channel.send("The ticket owner left the Discord. This ticket will now automatically close")
-                await saveandclose(channel)
+        if result:
+            for r in result:
+                channel = await bot.fetch_channel(r)
+                guild = channel.guild
+                if discord.utils.get(guild.members, id=int(member.id)) is None:
+                    await channel.send("The ticket owner left the Discord. Closing ticket...")
+                    await saveandclose(channel)
 
 
 @bot.command(name='add', help='Add someone to a ticket')
@@ -156,6 +156,7 @@ bot.remove_command('invite')
 async def invite(ctx):
     embed_var = discord.Embed(title='BirdTickets Invite', color=39393, description="https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=126032&scope=bot")
     await ctx.reply(embed=embed_var)
+
 
 @bot.command(name='remove', help='Remove someone from a ticket')
 async def remove(ctx, user: discord.Member):
@@ -256,7 +257,7 @@ async def get_transcript(channel):
                             if embed.title:
                                 msg += "\n" + embed.title
                             if embed.description:
-                                msg += "\n" + embed.description
+                                msg += " - " + embed.description
                     else:
                         msg = "Unknown message: See HTML transcript for more information."
                 text_transcript.write(f"{created_at} {message.author.name}#{message.author.discriminator} | {msg}\n")
@@ -369,12 +370,12 @@ async def on_raw_reaction_add(payload):
     if payload.guild_id is None:
         return
     with sqlite3.connect("data.db") as db:
-        cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM guilds WHERE panelmessage = {payload.message_id} LIMIT 1;"
-        cursor.execute(command)
-        result = cursor.fetchone()
-        if result[0] > 0:
-            if payload.emoji.name == "🎟️":
+        if payload.emoji.name == "🎟️":
+            cursor = db.cursor()
+            command = f"SELECT COUNT(*) FROM guilds WHERE panelmessage = {payload.message_id} LIMIT 1;"
+            cursor.execute(command)
+            result = cursor.fetchone()
+            if result[0] > 0:
                 guild = bot.get_guild(payload.guild_id)
                 channel = discord.utils.get(guild.channels, id=payload.channel_id)
                 message = await channel.fetch_message(payload.message_id)
@@ -382,12 +383,17 @@ async def on_raw_reaction_add(payload):
                 await message.remove_reaction('🎟️', member)
                 await create_ticket(guild, member)
         elif payload.emoji.name == "🔒":
-            command = f"SELECT COUNT(*) FROM tickets WHERE ticketmessage = {payload.message_id} LIMIT 1;"
-            cursor.execute(command)
-            result = cursor.fetchone()
-            if result[0] > 0:
-                guild = bot.get_guild(payload.guild_id)
-                await saveandclose(discord.utils.get(guild.channels, id=payload.channel_id))
+            channel = bot.get_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
+            for r in message.reactions:
+                if r.me and r.name == "🔒" and r.count > 1:
+                    cursor = db.cursor()
+                    command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
+                    cursor.execute(command)
+                    result = cursor.fetchone()
+                    if result[0] > 0:
+                        guild = bot.get_guild(payload.guild_id)
+                        await saveandclose(discord.utils.get(guild.channels, id=payload.channel_id))
 
 
 async def create_ticket(guild, member):
@@ -417,8 +423,8 @@ async def create_ticket(guild, member):
             ticket_message = await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.", embed=embed)
             await ticket_message.add_reaction("🔒")
             cursor = db.cursor()
-            command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild, ticketmessage)
-                            VALUES({channel.id}, {member.id}, {guild.id}, {ticket_message.id});"""
+            command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
+                            VALUES({channel.id}, {member.id}, {guild.id});"""
             cursor.execute(command)
             db.commit()
             cursor.close()
