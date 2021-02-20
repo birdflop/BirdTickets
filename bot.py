@@ -383,7 +383,7 @@ async def persist(ctx):
         cursor.execute(command)
         result = cursor.fetchone()
     if result and result[0] > 0:
-        ctx.channel.topic = "persist"
+        await channel.edit(topic="persist")
         await ctx.reply("This ticket will now persist")
 
 
@@ -397,7 +397,7 @@ async def unpersist(ctx):
         cursor.execute(command)
         result = cursor.fetchone()
     if result and result[0] > 0:
-        ctx.channel.topic = None
+        await channel.edit(topic=None)
         await ctx.reply("This ticket will no longer persist")
 
 
