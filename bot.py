@@ -485,7 +485,6 @@ async def repeating_task():
         cursor.execute(command)
         result = cursor.fetchall()
         if result:
-            print("result " + str(result))
             for r in result:
                 channel = await bot.fetch_channel(r[0])
                 if channel.topic is None:
