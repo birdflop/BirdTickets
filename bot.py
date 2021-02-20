@@ -29,7 +29,8 @@ async def get_prefix(client, message):
             return result[0]
         return '-'
 
-async def select_prefix(guild_id):
+
+async def get_prefix_from_guild(guild_id):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"SELECT prefix FROM guilds WHERE guildid = {guild_id} LIMIT 1;"
@@ -40,6 +41,8 @@ async def select_prefix(guild_id):
         return '-'
 
 bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
+bot.remove_command('help')
+bot.remove_command('invite')
 
 
 @bot.command(name='setprefix', help='Set the ticket category')
@@ -52,8 +55,8 @@ async def set_prefix(ctx, prefix):
             cursor = db.cursor()
             print(f"UPDATE guilds SET prefix = ?' WHERE guildid = {ctx.guild.id};", (prefix,))
             cursor.execute(f"UPDATE guilds SET prefix = ? WHERE guildid = {ctx.guild.id};", (prefix,))
-            response = f"Prefix set to {prefix}."
-            await ctx.channel.send(response)
+        response = f"Prefix set to {prefix}."
+        await ctx.channel.send(response)
     else:
         ctx.reply(f"{prefix} is too long. The maximum prefix length is 2.")
 
@@ -67,7 +70,7 @@ async def reset_ticket_data(ctx):
         cursor = db.cursor()
         command = f"DELETE FROM tickets WHERE parentguild = {ctx.guild.id};"
         cursor.execute(command)
-        await ctx.channel.send("All tickets have been removed from the database")
+    await ctx.channel.send("All tickets have been removed from the database")
 
 
 @bot.event
@@ -108,13 +111,13 @@ async def on_member_remove(member):
         command = f"SELECT ticketchannel FROM tickets WHERE owner = {member.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        if result:
-            for r in result:
-                channel = await bot.fetch_channel(r)
-                guild = channel.guild
-                if discord.utils.get(guild.members, id=int(member.id)) is None:
-                    await channel.send("The ticket owner left the Discord. Closing ticket...")
-                    await saveandclose(channel)
+    if result:
+        for r in result:
+            channel = await bot.fetch_channel(r)
+            guild = channel.guild
+            if discord.utils.get(guild.members, id=int(member.id)) is None:
+                await channel.send("The ticket owner left the Discord. Closing ticket...")
+                await saveandclose(channel)
 
 
 @bot.command(name='add', help='Add someone to a ticket')
@@ -126,11 +129,10 @@ async def add(ctx, user: discord.Member):
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        if result[0] > 0:
-            await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
+    if result and result[0] > 0:
+        await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
 
 
-bot.remove_command('help')
 @bot.command(name='help', help='Shows this message')
 async def help(ctx):
     if ctx.guild is None:
@@ -141,19 +143,21 @@ async def help(ctx):
                               "__close__ - Close an existing ticket\n"
                               "__add__ - Add someone to a ticket\n"
                               "__remove__ - Remove someone from a ticket\n"
-                              "__invite__ - Invite BirdTickets to your server", inline=False)
+                              "__invite__ - Invite BirdTickets to your server\n"
+                              "__persist__ - Prevent a ticket from expiring\n"
+                              "__unpersist__ - Make a ticket unpersist",
+                        inline=False)
     if ctx.author.guild_permissions.administrator:
         embed_var.add_field(name="Admin commands",
                             value="__panel__ - Create a support panel\n"
                                   "__setprefix__ - Change the prefix\n"
-                                  "__setlog__ - Save transcripts to a channel\n"
                                   "__setcategory__ - Set the ticket category\n"
-                                  "__removelog__ - Stop saving transcripts\n"
-                                  "__resetticketdata__ - Reset all ticket data\n", inline=False)
+                                  "__setlog__ - Save transcripts to a channel\n"
+                                  "__removelog__ - Stop saving transcripts",
+                            inline=False)
     await ctx.reply(embed=embed_var)
 
 
-bot.remove_command('invite')
 @bot.command(name='invite', help='Get the bot''s invite link')
 async def invite(ctx):
     embed_var = discord.Embed(title='BirdTickets Invite', color=39393, description="https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=126032&scope=bot")
@@ -169,8 +173,8 @@ async def remove(ctx, user: discord.Member):
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        if result[0] > 0:
-            await ctx.channel.set_permissions(user, read_messages=None, send_messages=None)
+    if result and result[0] > 0:
+        await ctx.channel.set_permissions(user, read_messages=None, send_messages=None)
 
 
 @bot.command(name='close', help='Close a ticket')
@@ -183,6 +187,7 @@ async def close(ctx):
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
+    if result:
         if result[0] > 0:
             await saveandclose(ctx.channel)
         else:
@@ -199,9 +204,9 @@ async def close(ctx):
 
 
 async def saveandclose(channel):
+    embed_var = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
+    msg_var = await channel.send(embed=embed_var)
     with sqlite3.connect("data.db") as db:
-        embed_var = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
-        msg_var = await channel.send(embed=embed_var)
         cursor = db.cursor()
         command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id} LIMIT 1;"
         cursor.execute(command)
@@ -212,32 +217,33 @@ async def saveandclose(channel):
         cursor.execute(command)
         result = cursor.fetchone()
         ticket_owner = bot.get_user(result[0])
-        if transcript_channel_id:
-            transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
-            if transcript_channel:
-                transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
-                embed_var = discord.Embed(title=channel.name,
-                                          description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
-                                                      f"Text transcript at [bin.birdflop.com]({binflop_link}).",
-                                          color=39393)
-                await transcript_channel.send(embed=embed_var)
-                await transcript_channel.send(file=transcript_file_1)
-                embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=39393)
-                await msg_var.edit(embed=embed_var)
-        if truncated:
-            global messages_limit
-            embed_var = discord.Embed(title='Ticket Transcript',
-                                     description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over {messages_limit} messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                     color=39393)
-        else:
-            embed_var = discord.Embed(title='Ticket Transcript',
-                                     description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                     color=39393)
-        await ticket_owner.send(embed=embed_var, file=transcript_file_2)
+    transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
+    if transcript_channel_id:
+        transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
+        if transcript_channel:
+            embed_var = discord.Embed(title=channel.name,
+                                      description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
+                                                  f"Text transcript at [bin.birdflop.com]({binflop_link}).",
+                                      color=39393)
+            await transcript_channel.send(embed=embed_var)
+            await transcript_channel.send(file=transcript_file_1)
+            embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=39393)
+            await msg_var.edit(embed=embed_var)
+    if truncated:
+        global messages_limit
+        embed_var = discord.Embed(title='Ticket Transcript',
+                                 description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over {messages_limit} messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                 color=39393)
+    else:
+        embed_var = discord.Embed(title='Ticket Transcript',
+                                 description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                 color=39393)
+    await ticket_owner.send(embed=embed_var, file=transcript_file_2)
+    with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
         cursor.execute(command)
-        await channel.delete()
+    await channel.delete()
 
 
 async def get_transcript(channel):
@@ -288,12 +294,12 @@ async def set_category(ctx, category_id):
     if category:
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
-            response = f"Setting category to {category_id}"
             command = f"""UPDATE guilds
                             SET ticketscategory = {category_id}
                             WHERE guildid = {ctx.guild.id};"""
             cursor.execute(command)
-            await ctx.reply(response)
+        response = f"Category set to {category_id}"
+        await ctx.reply(response)
 
 
 @bot.command(name='query', help='Debug command')
@@ -303,7 +309,10 @@ async def query(ctx, arg):
             cursor = db.cursor()
             cursor.execute(arg)
             result = cursor.fetchall()
+        if result:
             await ctx.author.send(result)
+        else:
+            await ctx.author.send("No results")
 
 
 @bot.command(name='setlog', help='Set the log channel')
@@ -315,12 +324,12 @@ async def set_log(ctx, channel: discord.TextChannel):
     if channel:
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
-            response = f"Setting logs to {channel.mention}"
             command = f"""UPDATE guilds
                             SET transcriptchannel = {channel.id}
                             WHERE guildid = {ctx.guild.id};"""
             cursor.execute(command)
-            await ctx.reply(response)
+        response = f"Set logs to {channel.mention}"
+        await ctx.reply(response)
 
 
 @bot.command(name='removelog', help='Remove the log channel')
@@ -334,8 +343,8 @@ async def remove_log(ctx):
                         SET transcriptchannel = null
                         WHERE guildid = {ctx.guild.id};"""
         cursor.execute(command)
-        response = f"No longer logging transcripts."
-        await ctx.reply(response)
+    response = f"No longer logging transcripts."
+    await ctx.reply(response)
 
 
 @bot.command(name='panel', help='Create a panel')
@@ -345,7 +354,6 @@ async def panel(ctx, color=39393):
         return
     channel = ctx.channel
     embed_var = discord.Embed(title="Need Help?", color=int(color), description="React below to create a support ticket.")
-    embed_var.set_footer(text="Powered by Birdflop Hosting")
     p = await channel.send(embed=embed_var)
     await p.add_reaction('🎟️')
     with sqlite3.connect("data.db") as db:
@@ -371,12 +379,12 @@ async def persist(ctx):
         return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
+        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        if result[0] > 0:
-            ctx.channel.topic = "persist"
-            await ctx.reply("This ticket will now persist")
+    if result and result[0] > 0:
+        ctx.channel.topic = "persist"
+        await ctx.reply("This ticket will now persist")
 
 
 @bot.command(name='unpersist', help='Make the ticket unpersist')
@@ -385,12 +393,12 @@ async def unpersist(ctx):
         return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
+        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        if result[0] > 0:
-            ctx.channel.topic = None
-            await ctx.reply("This ticket will no longer persist")
+    if result and result[0] > 0:
+        ctx.channel.topic = None
+        await ctx.reply("This ticket will no longer persist")
 
 
 
@@ -400,31 +408,32 @@ async def on_raw_reaction_add(payload):
         return
     if payload.guild_id is None:
         return
-    with sqlite3.connect("data.db") as db:
-        if payload.emoji.name == "🎟️":
+    if payload.emoji.name == "🎟️":
+        with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
             command = f"SELECT COUNT(*) FROM guilds WHERE panelmessage = {payload.message_id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
-            if result[0] > 0:
-                guild = bot.get_guild(payload.guild_id)
-                channel = discord.utils.get(guild.channels, id=payload.channel_id)
-                message = await channel.fetch_message(payload.message_id)
-                member = await guild.fetch_member(payload.user_id)
-                await message.remove_reaction('🎟️', member)
-                await create_ticket(guild, member)
-        elif payload.emoji.name == "🔒":
-            channel = bot.get_channel(payload.channel_id)
+        if result and result[0] > 0:
+            guild = bot.get_guild(payload.guild_id)
+            channel = discord.utils.get(guild.channels, id=payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
-            for r in message.reactions:
-                if r.me and r.emoji == "🔒" and r.count > 1:
+            member = await guild.fetch_member(payload.user_id)
+            await message.remove_reaction('🎟️', member)
+            await create_ticket(guild, member)
+    elif payload.emoji.name == "🔒":
+        channel = bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        for r in message.reactions:
+            if r.me and r.emoji == "🔒" and r.count > 1:
+                with sqlite3.connect("data.db") as db:
                     cursor = db.cursor()
                     command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
                     cursor.execute(command)
                     result = cursor.fetchone()
-                    if result[0] > 0:
-                        guild = bot.get_guild(payload.guild_id)
-                        await saveandclose(discord.utils.get(guild.channels, id=payload.channel_id))
+                if result and result[0] > 0:
+                    guild = bot.get_guild(payload.guild_id)
+                    await saveandclose(discord.utils.get(guild.channels, id=payload.channel_id))
 
 
 async def create_ticket(guild, member):
@@ -433,43 +442,45 @@ async def create_ticket(guild, member):
         command = f"SELECT ticketchannel FROM tickets WHERE parentguild = {guild.id} AND owner = {member.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
-        if result:
-            channel = discord.utils.get(guild.channels, id=result[0])
-            reply = f"You already have a ticket open. Please state your issue here {member.mention}"
-            await channel.send(reply)
-        else:
-            cursor = db.cursor()
-            command = f"SELECT ticketscategory, nextticketid FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
-            cursor.execute(command)
-            result = cursor.fetchone()
-            category = discord.utils.get(guild.categories, id=result[0])
-            nextid = result[1]
-            cursor = db.cursor()
-            command = f"UPDATE guilds SET nextticketid = {nextid + 1} WHERE guildid = {guild.id};"
-            cursor.execute(command)
-            channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
-            channel_id = channel.id
-            await channel.set_permissions(member, read_messages=True, send_messages=True)
-            embed = discord.Embed(title="Closing Tickets", description=f"React with 🔒 or type `{await select_prefix(guild.id)}close` to close the ticket", color=39393)
-            ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
-            await ticket_message.add_reaction("🔒")
-            cursor = db.cursor()
-            command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
-                            VALUES({channel.id}, {member.id}, {guild.id});"""
-            cursor.execute(command)
-            db.commit()
-            cursor.close()
-            guild = channel.guild
-            await asyncio.sleep(30*60)
-            channel = guild.get_channel(channel_id)
-            if channel:
-                if not await channel.history.get(author__id=member.id):
-                    await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not describe your issue.")
-                    await asyncio.sleep(30*60)
-                    channel = guild.get_channel(channel_id)
-                    if channel:
-                        if not await channel.history.get(author__id=member.id):
-                            await saveandclose(channel)
+    if result:
+        channel = discord.utils.get(guild.channels, id=result[0])
+        reply = f"You already have a ticket open. Please state your issue here {member.mention}"
+        await channel.send(reply)
+        return
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT ticketscategory, nextticketid FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchone()
+    if result:
+        category = discord.utils.get(guild.categories, id=result[0])
+        nextid = result[1]
+        cursor = db.cursor()
+        command = f"UPDATE guilds SET nextticketid = {nextid + 1} WHERE guildid = {guild.id};"
+        cursor.execute(command)
+        channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
+        channel_id = channel.id
+        await channel.set_permissions(member, read_messages=True, send_messages=True)
+        embed = discord.Embed(title="Closing Tickets", description=f"React with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket", color=39393)
+        ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
+        await ticket_message.add_reaction("🔒")
+        cursor = db.cursor()
+        command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
+                        VALUES({channel.id}, {member.id}, {guild.id});"""
+        cursor.execute(command)
+        db.commit()
+        cursor.close()
+        guild = channel.guild
+        await asyncio.sleep(30*60)
+        channel = guild.get_channel(channel_id)
+        if channel:
+            if not await channel.history.get(author__id=member.id):
+                await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not describe your issue.")
+                await asyncio.sleep(30*60)
+                channel = guild.get_channel(channel_id)
+                if channel:
+                    if not await channel.history.get(author__id=member.id):
+                        await saveandclose(channel)
 
 
 def predicate(message):
@@ -484,24 +495,24 @@ async def repeating_task():
         command = f"SELECT ticketchannel, owner FROM tickets;"
         cursor.execute(command)
         result = cursor.fetchall()
-        if result:
-            for r in result:
-                channel = await bot.fetch_channel(r[0])
-                if channel.topic is None:
-                    owner_message = await channel.history().get(author__id=r[1])
-                    nonbot_message = await channel.history().find(predicate)
-                    if nonbot_message is None:
-                        return
-                    if owner_message is None or owner_message.id < nonbot_message.id:
-                        binary_messageid = bin(most_recent_person_message.id).replace("0b", "")
-                        binary_time = int(binary_messageid[:-22])
-                        timestamp = int(str(binary_time), 2)
-                        timestamp += 1420070400000
-                        if 86400000 <= now - timestamp < 86460000:
-                            channel.send(f"This ticket has been inactive for over 24 hours. It will automatically close after 24 more hours. If the issue has been resolved, you can say -close to delete the ticket. {bot.get_user(r[1]).mention}")
-                        elif 172800000 <= now - timestamp < 172860000:
-                            channel.send("This ticket has been closed for inactivity.")
-                            saveandclose(channel)
+    if result:
+        for r in result:
+            channel = await bot.fetch_channel(r[0])
+            if channel.topic is None:
+                owner_message = await channel.history().get(author__id=r[1])
+                nonbot_message = await channel.history().find(predicate)
+                if nonbot_message is None:
+                    return
+                if owner_message is None or owner_message.id < nonbot_message.id:
+                    binary_messageid = bin(nonbot_message.id).replace("0b", "")
+                    binary_time = int(binary_messageid[:-22])
+                    timestamp = int(str(binary_time), 2)
+                    timestamp += 1420070400000
+                    if 86400000 <= now - timestamp < 86460000:
+                        channel.send(f"This ticket has been inactive for over 24 hours. It will automatically close after 24 more hours. If the issue has been resolved, you can say -close to delete the ticket. {bot.get_user(r[1]).mention}")
+                    elif 172800000 <= now - timestamp < 172860000:
+                        channel.send("This ticket has been closed for inactivity.")
+                        saveandclose(channel)
 
 
 repeating_task.start()
