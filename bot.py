@@ -451,7 +451,7 @@ async def create_ticket(guild, member):
             channel_id = channel.id
             await channel.set_permissions(member, read_messages=True, send_messages=True)
             embed = discord.Embed(title="Closing Tickets", description=f"React with 🔒 or type `{await select_prefix(guild.id)}close` to close the ticket", color=39393)
-            ticket_message = await channel.send(f"Hello {member.mention}, please explain your issue in as much detail as possible.", embed=embed)
+            ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
             await ticket_message.add_reaction("🔒")
             cursor = db.cursor()
             command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
@@ -464,7 +464,7 @@ async def create_ticket(guild, member):
             channel = guild.get_channel(channel_id)
             if channel:
                 if not await channel.history.get(author__id=member.id):
-                    await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not respond.")
+                    await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not describe your issue.")
                     await asyncio.sleep(30*60)
                     channel = guild.get_channel(channel_id)
                     if channel:
@@ -472,12 +472,13 @@ async def create_ticket(guild, member):
                             await saveandclose(channel)
 
 
+def predicate(message):
+    return not message.author.bot
+
+
 @tasks.loop(seconds=60)
 async def repeating_task():
     now = int(1000 * time.time())
-    current_time = now.strftime("%H:%M:%S")
-    if current_time == '04:00:00':
-        print(current_time)
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"SELECT ticketchannel, owner FROM tickets;"
@@ -488,27 +489,19 @@ async def repeating_task():
             for r in result:
                 channel = await bot.fetch_channel(r[0])
                 if channel.topic is None:
-                    # TODO
-                    # this should be redone
-                    # get the most recent message by the ticket owner, and then the most recent message by (not birdticket and not ticket owner).
-                    # and then the if statement below checks if the latter is more recent than the ticket owner.
-                    # if ticket owner never sent a message (ie, they deleted it), then enter the if marked below
-                    history = await channel.history(limit=5).flatten()
-                    most_recent_person_message = None
-                    for m in history:
-                        if most_recent_person_message is None:
-                            author = m.author
-                            if not author.bot:
-                                most_recent_person_message = m
-                    if most_recent_person_message.author.id != r[1]:  # this needs to be changed to do the comments above
+                    owner_message = await channel.history().get(author__id=r[1])
+                    nonbot_message = await channel.history().find(predicate)
+                    if nonbot_message is None:
+                        return
+                    if owner_message is None or owner_message.id < nonbot_message.id:
                         binary_messageid = bin(most_recent_person_message.id).replace("0b", "")
                         binary_time = int(binary_messageid[:-22])
                         timestamp = int(str(binary_time), 2)
                         timestamp += 1420070400000
                         if 86400000 <= now - timestamp < 86460000:
-                            channel.send("This ticket has been inactive for 24h. If the issue has been resolved, use -close. Otherwise, say -persist")
+                            channel.send(f"This ticket has been inactive for over 24 hours. It will automatically close after 24 more hours. If the issue has been resolved, you can say -close to delete the ticket. {bot.get_user(r[1]).mention}")
                         elif 172800000 <= now - timestamp < 172860000:
-                            channel.send("This ticket has been inactive for 48h. Closing...")
+                            channel.send("This ticket has been closed for inactivity.")
                             saveandclose(channel)
 
 
