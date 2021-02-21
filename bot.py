@@ -467,7 +467,9 @@ async def create_ticket(guild, member):
         embed = discord.Embed(title="Closing Tickets", description=f"React with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket", color=39393)
         ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
         await ticket_message.add_reaction("🔒")
-        await ticket_message.pin(reason=f'Pinned first message in #{channel.mention}')
+        await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
+        pin_message = await channel.fetch_message(channel.last_message_id)
+        await bot.delete_message(pin_message)
         cursor = db.cursor()
         command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
                         VALUES({channel.id}, {member.id}, {guild.id});"""
