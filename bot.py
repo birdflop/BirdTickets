@@ -474,7 +474,7 @@ async def create_ticket(guild, member):
         await ticket_message.add_reaction("🔒")
         await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
         pin_message = await channel.fetch_message(channel.last_message_id)
-        await bot.delete_message(pin_message)
+        await pin_message.delete()
         cursor = db.cursor()
         command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
                         VALUES({channel.id}, {member.id}, {guild.id});"""
