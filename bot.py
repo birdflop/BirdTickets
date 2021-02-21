@@ -131,6 +131,8 @@ async def add(ctx, user: discord.Member):
         result = cursor.fetchone()
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
+        embed_var = discord.Embed(title='Member Added', color=39393, description=f'{user.mention} has been added to {ctx.channel.mention}')
+        ctx.send(embed=embed_var)
 
 
 @bot.command(name='help', help='Shows this message')
