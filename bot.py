@@ -221,6 +221,7 @@ async def saveandclose(channel):
         result = cursor.fetchone()
         ticket_owner = bot.get_user(result[0])
     transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
+    transcript_channel = None
     if transcript_channel_id:
         transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
         if transcript_channel:
@@ -241,7 +242,11 @@ async def saveandclose(channel):
         embed_var = discord.Embed(title='Ticket Transcript',
                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
                                  color=39393)
-    await ticket_owner.send(embed=embed_var, file=transcript_file_2)
+    try:
+        await ticket_owner.send(embed=embed_var, file=transcript_file_2)
+    except discord.errors.Forbidden:
+        if transcript_channel:
+            await transcript_channel.send(ticket_owner.name + " does not accept DMs")
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"DELETE FROM tickets WHERE ticketchannel = {channel.id};"
