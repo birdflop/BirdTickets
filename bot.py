@@ -176,7 +176,7 @@ async def remove(ctx, user: discord.Member):
         result = cursor.fetchone()
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=None, send_messages=None)
-        embed_var = discord.Embed(title='User Added', color=0xdd2222, description=f'{user.mention} has been removed from {ctx.channel.mention}')
+        embed_var = discord.Embed(title='User Removed', color=0xdd2222, description=f'{user.mention} has been removed from {ctx.channel.mention}')
         await ctx.send(embed=embed_var)
 
 
