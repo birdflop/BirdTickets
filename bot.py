@@ -487,12 +487,12 @@ async def create_ticket(guild, member):
         await asyncio.sleep(30*60)
         channel = guild.get_channel(channel_id)
         if channel:
-            if not await channel.history.get(author__id=member.id):
+            if not await channel.history().get(author__id=member.id):
                 await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not describe your issue.")
                 await asyncio.sleep(30*60)
                 channel = guild.get_channel(channel_id)
                 if channel:
-                    if not await channel.history.get(author__id=member.id):
+                    if not await channel.history().get(author__id=member.id):
                         await saveandclose(channel)
 
 
