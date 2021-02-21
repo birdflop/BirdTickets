@@ -9,7 +9,6 @@ import io
 import asyncio
 import requests
 import json
-from datetime import datetime
 import time
 
 load_dotenv()
@@ -58,7 +57,7 @@ async def set_prefix(ctx, prefix):
         response = f"Prefix set to {prefix}."
         await ctx.channel.send(response)
     else:
-        ctx.reply(f"{prefix} is too long. The maximum prefix length is 2.")
+        ctx.reply(f"`{prefix}` is too long. The maximum prefix length is 2.")
 
 
 @bot.command(name='reseticketdata', help='Reset all ticket data')
@@ -131,7 +130,7 @@ async def add(ctx, user: discord.Member):
         result = cursor.fetchone()
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
-        embed_var = discord.Embed(title='Member Added', color=0x22dd22, description=f'{user.mention} has been added to {ctx.channel.mention}')
+        embed_var = discord.Embed(title='User Added', color=0x22dd22, description=f'{user.mention} has been added to {ctx.channel.mention}')
         await ctx.send(embed=embed_var)
 
 
@@ -177,7 +176,7 @@ async def remove(ctx, user: discord.Member):
         result = cursor.fetchone()
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=None, send_messages=None)
-        embed_var = discord.Embed(title='Member Added', color=0xdd2222, description=f'{user.mention} has been removed from {ctx.channel.mention}')
+        embed_var = discord.Embed(title='User Added', color=0xdd2222, description=f'{user.mention} has been removed from {ctx.channel.mention}')
         await ctx.send(embed=embed_var)
 
 
