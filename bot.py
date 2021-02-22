@@ -469,7 +469,7 @@ async def create_ticket(guild, member):
         channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
         channel_id = channel.id
         await channel.set_permissions(member, read_messages=True, send_messages=True)
-        embed = discord.Embed(title="Closing Tickets", description=f"React with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket", color=39393)
+        embed = discord.Embed(title="Closing Tickets", description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket", color=39393)
         ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
         await ticket_message.add_reaction("🔒")
         await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
@@ -480,12 +480,12 @@ async def create_ticket(guild, member):
         db.commit()
         cursor.close()
         guild = channel.guild
-        await asyncio.sleep(5*60)
+        await asyncio.sleep(15*60)
         channel = guild.get_channel(channel_id)
         if channel:
             if not await channel.history().get(author__id=member.id):
-                await channel.send(f"{member.mention}, are you there? This ticket will automatically be closed after 30 minutes if you do not describe your issue.")
-                await asyncio.sleep(30*60)
+                await channel.send(f"{member.mention}, are you there? This ticket will automatically close after 15 minutes if you do not describe your issue.")
+                await asyncio.sleep(15*60)
                 channel = guild.get_channel(channel_id)
                 if channel:
                     if not await channel.history().get(author__id=member.id):
@@ -494,6 +494,13 @@ async def create_ticket(guild, member):
 
 def predicate(message):
     return not message.author.bot
+
+
+@bot.event
+async def on_message(message):
+    if message.type == discord.MessageType.pins_add and message.author.id == bot.user.id:
+        await message.delete()
+    await bot.process_commands(message)
 
 
 @tasks.loop(seconds=60)
