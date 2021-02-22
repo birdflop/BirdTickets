@@ -473,10 +473,6 @@ async def create_ticket(guild, member):
         ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
         await ticket_message.add_reaction("🔒")
         await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
-        # this should be done differently - use the on_message event
-        lm = await channel.last_message
-        if lm:
-            await channel.last_message.delete()
         cursor = db.cursor()
         command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
                         VALUES({channel.id}, {member.id}, {guild.id});"""
@@ -484,7 +480,7 @@ async def create_ticket(guild, member):
         db.commit()
         cursor.close()
         guild = channel.guild
-        await asyncio.sleep(30*60)
+        await asyncio.sleep(5*60)
         channel = guild.get_channel(channel_id)
         if channel:
             if not await channel.history().get(author__id=member.id):
