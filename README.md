@@ -19,6 +19,3 @@ Premium tickets without the premium.
 
 # Support
 If you run into any issues or bugs, you can ask for help in the [Birdflop Hosting Discord](https://discord.gg/ZrRvTMu).
-
-# TODO
-1. Custom messages/reactions
