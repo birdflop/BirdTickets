@@ -391,8 +391,8 @@ async def persist(ctx):
         cursor.execute(command)
         result = cursor.fetchone()
     if result and result[0] > 0:
-        await ctx.channel.edit(topic="persist")
         await ctx.reply("This ticket will now persist")
+        await ctx.channel.edit(topic="persist")
 
 
 @bot.command(name='unpersist', help='Make the ticket unpersist')
@@ -405,8 +405,8 @@ async def unpersist(ctx):
         cursor.execute(command)
         result = cursor.fetchone()
     if result and result[0] > 0:
-        await ctx.channel.edit(topic=None)
         await ctx.reply("This ticket will no longer persist")
+        await ctx.channel.edit(topic=None)
 
 
 @bot.event
@@ -530,7 +530,7 @@ async def repeating_task():
                     timestamp = int(str(binary_time), 2)
                     timestamp += 1420070400000
                     if 86400000 <= now - timestamp < 86460000:
-                        await channel.send(f"This ticket has been inactive for over 24 hours. It will automatically close after 24 more hours. If the issue has been resolved, you can say -close to delete the ticket. {bot.get_user(r[1]).mention}")
+                        await channel.send(f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to delete the ticket. {bot.get_user(r[1]).mention}")
                     elif 172800000 <= now - timestamp < 172860000:
                         await channel.send("This ticket has been closed for inactivity.")
                         saveandclose(channel)
