@@ -409,7 +409,6 @@ async def unpersist(ctx):
         await ctx.reply("This ticket will no longer persist")
 
 
-
 @bot.event
 async def on_raw_reaction_add(payload):
     if payload.user_id == bot.user.id:
@@ -525,9 +524,9 @@ async def repeating_task():
                     timestamp = int(str(binary_time), 2)
                     timestamp += 1420070400000
                     if 86400000 <= now - timestamp < 86460000:
-                        channel.send(f"This ticket has been inactive for over 24 hours. It will automatically close after 24 more hours. If the issue has been resolved, you can say -close to delete the ticket. {bot.get_user(r[1]).mention}")
+                        await channel.send(f"This ticket has been inactive for over 24 hours. It will automatically close after 24 more hours. If the issue has been resolved, you can say -close to delete the ticket. {bot.get_user(r[1]).mention}")
                     elif 172800000 <= now - timestamp < 172860000:
-                        channel.send("This ticket has been closed for inactivity.")
+                        await channel.send("This ticket has been closed for inactivity.")
                         saveandclose(channel)
 
 
