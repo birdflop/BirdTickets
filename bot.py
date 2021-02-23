@@ -451,9 +451,15 @@ async def create_ticket(guild, member):
         result = cursor.fetchone()
     if result:
         channel = discord.utils.get(guild.channels, id=result[0])
-        reply = f"You already have a ticket open. Please state your issue here {member.mention}"
-        await channel.send(reply)
-        return
+        if channel:
+            reply = f"You already have a ticket open. Please state your issue here {member.mention}"
+            await channel.send(reply)
+            return
+        else:
+            with sqlite3.connect("data.db") as db:
+                cursor = db.cursor()
+                command = f"DELETE FROM tickets WHERE ticketchannel = {result[0]} LIMIT 1;"
+                cursor.execute(command)
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"SELECT ticketscategory, nextticketid FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
