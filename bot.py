@@ -518,19 +518,20 @@ async def repeating_task():
     if result:
         for r in result:
             expiry = r[2]
-            if 24 * 60 * 60 == expiry - now:
-                channel = await bot.fetch_channel(r[0])
-                owner = bot.get_user(r[1])
-                await channel.send(f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to delete the ticket. {owner.mention}")
-            elif 15 * 60 == expiry - now:
-                channel = await bot.fetch_channel(r[0])
-                owner = bot.get_user(r[1])
-                if not await channel.history().get(author__id=member.id):
-                    await channel.send(f"{owner.mention}, are you there? This ticket will automatically close after 15 minutes if you do not describe your issue.")
-            elif 0 == expiry - now:
-                channel = await bot.fetch_channel(r[0])
-                await channel.send("This ticket has been automatically closed.")
-                await saveandclose(channel)
+            if expiry:
+                if 24 * 60 * 60 == expiry - now:
+                    channel = await bot.fetch_channel(r[0])
+                    owner = bot.get_user(r[1])
+                    await channel.send(f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to delete the ticket. {owner.mention}")
+                elif 15 * 60 == expiry - now:
+                    channel = await bot.fetch_channel(r[0])
+                    owner = bot.get_user(r[1])
+                    if not await channel.history().get(author__id=member.id):
+                        await channel.send(f"{owner.mention}, are you there? This ticket will automatically close after 15 minutes if you do not describe your issue.")
+                elif 0 == expiry - now:
+                    channel = await bot.fetch_channel(r[0])
+                    await channel.send("This ticket has been automatically closed.")
+                    await saveandclose(channel)
 
 
 @bot.event
