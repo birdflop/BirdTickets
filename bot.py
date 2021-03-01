@@ -52,24 +52,11 @@ async def set_prefix(ctx, prefix):
     if len(prefix) <= 2:
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
-            print(f"UPDATE guilds SET prefix = ?' WHERE guildid = {ctx.guild.id};", (prefix,))
             cursor.execute(f"UPDATE guilds SET prefix = ? WHERE guildid = {ctx.guild.id};", (prefix,))
         response = f"Prefix set to {prefix}."
         await ctx.channel.send(response)
     else:
         ctx.reply(f"`{prefix}` is too long. The maximum prefix length is 2.")
-
-
-@bot.command(name='reseticketdata', help='Reset all ticket data')
-@has_permissions(administrator=True)
-async def reset_ticket_data(ctx):
-    if ctx.guild is None:
-        return
-    with sqlite3.connect("data.db") as db:
-        cursor = db.cursor()
-        command = f"DELETE FROM tickets WHERE parentguild = {ctx.guild.id};"
-        cursor.execute(command)
-    await ctx.channel.send("All tickets have been removed from the database")
 
 
 @bot.event
@@ -90,6 +77,7 @@ async def on_ready():
                         ticketchannel int PRIMARY KEY,
                         owner int NOT NULL,
                         parentguild int NOT NULL,
+                        expiry int(11),
                         FOREIGN KEY (parentguild) REFERENCES guilds (guildid));"""
         cursor.execute(command)
 
@@ -387,12 +375,10 @@ async def persist(ctx):
         return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        cursor.execute(command)
-        result = cursor.fetchone()
-    if result and result[0] > 0:
+        command = f"UPDATE tickets SET expiry = NULL WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+        affected = cursor.execute(command)
+    if affected:
         await ctx.reply("This ticket will now persist")
-        await ctx.channel.edit(topic="persist")
 
 
 @bot.command(name='unpersist', help='Make the ticket unpersist')
@@ -401,12 +387,22 @@ async def unpersist(ctx):
         return
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        cursor.execute(command)
-        result = cursor.fetchone()
-    if result and result[0] > 0:
+        command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+        affected = cursor.execute(command)
+    if affected:
         await ctx.reply("This ticket will no longer persist")
-        await ctx.channel.edit(topic=None)
+
+
+@bot.command(name='resolved', help='Makes the ticket expire soon')
+async def resolved(ctx):
+    if ctx.guild is None:
+        return
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+        affected = cursor.execute(command)
+    if affected:
+        await ctx.channel.send(f"This ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say {get_prefix_from_guild(ctx.guild.id)}close to close the ticket now.")
 
 
 @bot.event
@@ -479,8 +475,8 @@ async def create_ticket(guild, member):
         await ticket_message.add_reaction("🔒")
         await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
         cursor = db.cursor()
-        command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild)
-                        VALUES({channel.id}, {member.id}, {guild.id});"""
+        command = f"""INSERT INTO tickets (ticketchannel, owner, parentguild, expiry)
+                        VALUES({channel.id}, {member.id}, {guild.id}, {int(time.time()) + 30 * 60});"""
         cursor.execute(command)
         db.commit()
         cursor.close()
@@ -496,45 +492,51 @@ async def create_ticket(guild, member):
                     if not await channel.history().get(author__id=member.id):
                         await saveandclose(channel)
 
-
-def predicate(message):
-    return not message.author.bot
-
-
 @bot.event
 async def on_message(message):
     if message.type == discord.MessageType.pins_add and message.author.id == bot.user.id:
         await message.delete()
+    if not message.author.bot:
+        with sqlite3.connect("data.db") as db:
+            cursor = db.cursor()
+            command = f"UPDATE tickets SET expiry = 0 WHERE ticketchannel = {message.channel.id} AND owner = {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
+            cursor.execute(command)
+            cursor = db.cursor()
+            command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE ticketchannel = {message.channel.id} AND owner != {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
+            cursor.execute(command)
     await bot.process_commands(message)
 
 
-@tasks.loop(seconds=60)
+@tasks.loop(seconds=1)
 async def repeating_task():
-    now = int(1000 * time.time())
+    now = int(time.time())
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT ticketchannel, owner FROM tickets;"
+        command = f"SELECT ticketchannel, owner, expiry FROM tickets;"
         cursor.execute(command)
         result = cursor.fetchall()
     if result:
         for r in result:
-            channel = await bot.fetch_channel(r[0])
-            if channel.topic is None:
-                owner_message = await channel.history().get(author__id=r[1])
-                nonbot_message = await channel.history().find(predicate)
-                if nonbot_message is None:
-                    return
-                if owner_message is None or owner_message.id < nonbot_message.id:
-                    binary_messageid = bin(nonbot_message.id).replace("0b", "")
-                    binary_time = int(binary_messageid[:-22])
-                    timestamp = int(str(binary_time), 2)
-                    timestamp += 1420070400000
-                    if 86400000 <= now - timestamp < 86460000:
-                        await channel.send(f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to delete the ticket. {bot.get_user(r[1]).mention}")
-                    elif 172800000 <= now - timestamp < 172860000:
-                        await channel.send("This ticket has been closed for inactivity.")
-                        saveandclose(channel)
+            expiry = r[2]
+            if 24 * 60 * 60 == expiry - now:
+                channel = await bot.fetch_channel(r[0])
+                owner = bot.get_user(r[1])
+                await channel.send(f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to delete the ticket. {owner.mention}")
+            elif 15 * 60 == expiry - now:
+                channel = await bot.fetch_channel(r[0])
+                owner = bot.get_user(r[1])
+                if not await channel.history().get(author__id=member.id):
+                    await channel.send(f"{owner.mention}, are you there? This ticket will automatically close after 15 minutes if you do not describe your issue.")
+            elif 0 == expiry - now:
+                channel = await bot.fetch_channel(r[0])
+                await channel.send("This ticket has been automatically closed.")
+                await saveandclose(channel)
 
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.errors.CommandNotFound):
+        print(f"Command {ctx} not found")
 
 repeating_task.start()
 bot.run(TOKEN)
