@@ -376,8 +376,8 @@ async def persist(ctx):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"UPDATE tickets SET expiry = NULL WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        affected = cursor.execute(command)
-    if affected:
+        cursor.execute(command)
+    if cursor.rowcount > 0:
         await ctx.reply("This ticket will now persist")
 
 
@@ -388,8 +388,8 @@ async def unpersist(ctx):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        affected = cursor.execute(command)
-    if affected:
+        cursor.execute(command)
+    if cursor.rowcount > 0:
         await ctx.reply("This ticket will no longer persist")
 
 
@@ -400,9 +400,10 @@ async def resolved(ctx):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        affected = cursor.execute(command)
-    if affected:
-        await ctx.channel.send(f"This ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say {get_prefix_from_guild(ctx.guild.id)}close to close the ticket now.")
+        cursor.execute(command)
+    if cursor.rowcount > 0:
+        await ctx.message.delete()
+        await ctx.channel.send(f"This ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say {await get_prefix_from_guild(ctx.guild.id)}close to close the ticket now.")
 
 
 @bot.event
