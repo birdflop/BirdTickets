@@ -401,9 +401,6 @@ async def resolved(ctx):
         cursor = db.cursor()
         command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor = cursor.execute(command)
-        result = cursor.fetchone()
-        print(result)
-        print(cursor.rowcount)
     if cursor.rowcount > 0:
         await ctx.message.delete()
         with sqlite3.connect("data.db") as db:
