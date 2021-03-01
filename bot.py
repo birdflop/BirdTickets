@@ -400,10 +400,19 @@ async def resolved(ctx):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        cursor.execute(command)
+        cursor = cursor.execute(command)
+        result = cursor.fetchone()
+        print(result)
+        print(cursor.rowcount)
     if cursor.rowcount > 0:
         await ctx.message.delete()
-        await ctx.channel.send(f"This ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say {await get_prefix_from_guild(ctx.guild.id)}close to close the ticket now.")
+        with sqlite3.connect("data.db") as db:
+            cursor = db.cursor()
+            command = f"SELECT owner FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+            cursor.execute(command)
+            result = cursor.fetchone()
+            owner = bot.get_user(result[0])
+        await ctx.channel.send(f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
 
 
 @bot.event
