@@ -87,7 +87,7 @@ async def on_guild_join(guild):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"""INSERT INTO guilds (guildid, panelmessage, ticketscategory, nextticketid, transcriptchannel, prefix)
-                        VALUES({guild.id}, null, null, 1, null, '-');"""
+                        VALUES({guild.id}, NULL, NULL, 1, NULL, '-');"""
         cursor.execute(command)
 
 
