@@ -61,7 +61,8 @@ async def set_prefix(ctx, prefix):
 
 @bot.event
 async def on_ready():
-    print("I am running")
+    time = now.strftime("%d/%m/%Y %H:%M:%S")
+    print(f"[{time}] I am running")
     await bot.change_presence(activity=discord.Game(name="birdflop.com"))
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
@@ -132,10 +133,14 @@ async def help(ctx):
                               "__close__ - Close an existing ticket\n"
                               "__add__ - Add someone to a ticket\n"
                               "__remove__ - Remove someone from a ticket\n"
-                              "__invite__ - Invite BirdTickets to your server\n"
-                              "__persist__ - Prevent a ticket from expiring\n"
-                              "__unpersist__ - Make a ticket unpersist",
+                              "__invite__ - Invite BirdTickets to your server",
                         inline=False)
+    if is_staff(ctx.author, ctx.guild.id):
+        embed_var.add_field(name="Staff commands",
+                            value="__persist__ - Prevent a ticket from expiring\n"
+                                  "__unpersist__ - Make a ticket unpersist\n"
+                                  "__resolved__ - Mark a ticket as resolved",
+                            inline=False)
     if ctx.author.guild_permissions.administrator:
         embed_var.add_field(name="Admin commands",
                             value="__panel__ - Create a support panel\n"
@@ -145,6 +150,21 @@ async def help(ctx):
                                   "__removelog__ - Stop saving transcripts",
                             inline=False)
     await ctx.reply(embed=embed_var)
+
+
+def is_staff(member, guild_id):
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"""SELECT ticketscategory FROM tickets WHERE guildid = {guild_id} LIMIT 1;"""
+        cursor.execute(command)
+        result = cursor.fetchone()
+    if result and result[0]:
+        for c in ctx.guild.categories:
+            if c.id == result[0]:
+                perms = c.permissions_for(member)
+                if perms.send_messages:
+                    return True
+    return False
 
 
 @bot.command(name='invite', help='Get the bot''s invite link')
@@ -173,7 +193,6 @@ async def close(ctx):
     if ctx.guild is None:
         return
     with sqlite3.connect("data.db") as db:
-        # if ticket channel, saveandclose
         cursor = db.cursor()
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
@@ -373,43 +392,46 @@ async def new(ctx):
 async def persist(ctx):
     if ctx.guild is None:
         return
-    with sqlite3.connect("data.db") as db:
-        cursor = db.cursor()
-        command = f"UPDATE tickets SET expiry = NULL WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        cursor.execute(command)
-    if cursor.rowcount > 0:
-        await ctx.reply("This ticket will now persist")
+    if is_staff(ctx.author, ctx.guild.id):
+        with sqlite3.connect("data.db") as db:
+            cursor = db.cursor()
+            command = f"UPDATE tickets SET expiry = NULL WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+            cursor.execute(command)
+        if cursor.rowcount > 0:
+            await ctx.reply("This ticket will now persist")
 
 
 @bot.command(name='unpersist', help='Make the ticket unpersist')
 async def unpersist(ctx):
     if ctx.guild is None:
         return
-    with sqlite3.connect("data.db") as db:
-        cursor = db.cursor()
-        command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        cursor.execute(command)
-    if cursor.rowcount > 0:
-        await ctx.reply("This ticket will no longer persist")
+    if is_staff(ctx.author, ctx.guild.id):
+        with sqlite3.connect("data.db") as db:
+            cursor = db.cursor()
+            command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+            cursor.execute(command)
+        if cursor.rowcount > 0:
+            await ctx.reply("This ticket will no longer persist")
 
 
 @bot.command(name='resolved', help='Makes the ticket expire soon')
 async def resolved(ctx):
     if ctx.guild is None:
         return
-    with sqlite3.connect("data.db") as db:
-        cursor = db.cursor()
-        command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-        cursor = cursor.execute(command)
-    if cursor.rowcount > 0:
-        await ctx.message.delete()
+    if is_staff(ctx.author, ctx.guild.id):
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
-            command = f"SELECT owner FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
-            cursor.execute(command)
-            result = cursor.fetchone()
-            owner = bot.get_user(result[0])
-        await ctx.channel.send(f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
+            command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+            cursor = cursor.execute(command)
+        if cursor.rowcount > 0:
+            await ctx.message.delete()
+            with sqlite3.connect("data.db") as db:
+                cursor = db.cursor()
+                command = f"SELECT owner FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
+                cursor.execute(command)
+                result = cursor.fetchone()
+                owner = bot.get_user(result[0])
+            await ctx.channel.send(f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
 
 
 @bot.event
