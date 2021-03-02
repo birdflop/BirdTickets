@@ -10,7 +10,7 @@
 7. Custom bot prefix.
 8. Add and remove people from tickets.
 
-# Setup:
+# Setup
 1. [Click here](https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=126032&scope=bot) to invite the bot to your server.
 3. Create a new `tickets` channel category. It doesn't necessarily have to be named tickets.
 4. Remove `@everyone`'s viewing permissions from `tickets`.
