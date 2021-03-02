@@ -85,7 +85,7 @@ async def on_ready():
     now = int(time.time())
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT expiry, ticketchannel FROM tickets LIMIT 1;"
+        command = f"SELECT expiry, ticketchannel FROM tickets WHERE expiry > 0;"
         cursor.execute(command)
         result = cursor.fetchall()
     for r in result:
@@ -554,33 +554,32 @@ async def repeating_task():
     now = int(time.time())
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"SELECT ticketchannel, owner, expiry FROM tickets;"
+        command = f"SELECT ticketchannel, owner, expiry FROM tickets WHERE expiry > 0;"
         cursor.execute(command)
         result = cursor.fetchall()
     if result:
         for r in result:
             expiry = r[2]
-            if expiry and expiry > 0:
-                if expiry - now == 24 * 60 * 60:
-                    channel = await bot.fetch_channel(r[0])
-                    owner = bot.get_user(r[1])
-                    await channel.send(f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to delete the ticket. {owner.mention}")
-                elif expiry - now == 15 * 60:
-                    channel = await bot.fetch_channel(r[0])
-                    owner = bot.get_user(r[1])
-                    if not await channel.history().get(author__id=owner.id):
-                        await channel.send(f"{owner.mention}, are you there? This ticket will automatically close after 15 minutes if you do not describe your issue.")
-                elif expiry - now == 0:
-                    channel = await bot.fetch_channel(r[0])
-                    await channel.send("This ticket has been automatically closed.")
-                    await saveandclose(channel)
+            if expiry - now == 24 * 60 * 60:
+                channel = await bot.fetch_channel(r[0])
+                owner = bot.get_user(r[1])
+                await channel.send(f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to delete the ticket. {owner.mention}")
+            elif expiry - now == 15 * 60:
+                channel = await bot.fetch_channel(r[0])
+                owner = bot.get_user(r[1])
+                if not await channel.history().get(author__id=owner.id):
+                    await channel.send(f"{owner.mention}, are you there? This ticket will automatically close after 15 minutes if you do not describe your issue.")
+            elif expiry - now == 0:
+                channel = await bot.fetch_channel(r[0])
+                await channel.send("This ticket has been automatically closed.")
+                await saveandclose(channel)
 
 
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CommandNotFound):
-        print(f"Command {ctx.message} in {ctx.guild.name} not found")
-    if isinstance(error, commands.errors.Forbidden):
+        print(f"Command {ctx.message.content} in {ctx.guild.name} not found")
+    if isinstance(error, discord.Forbidden):
         print(f"Bot does not have permissions in {ctx.guild.name}")
 
 repeating_task.start()
