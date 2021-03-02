@@ -145,7 +145,7 @@ async def help(ctx):
                               "__remove__ - Remove someone from a ticket\n"
                               "__invite__ - Invite BirdTickets to your server",
                         inline=False)
-    if is_staff(ctx.author, ctx.guild.id):
+    if is_staff(ctx.author, ctx.guild):
         embed_var.add_field(name="Staff commands",
                             value="__persist__ - Prevent a ticket from expiring\n"
                                   "__unpersist__ - Make a ticket unpersist\n"
@@ -162,14 +162,17 @@ async def help(ctx):
     await ctx.reply(embed=embed_var)
 
 
-def is_staff(member, guild_id):
+def is_staff(member, guild):
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
-        command = f"""SELECT ticketscategory FROM tickets WHERE guildid = {guild_id} LIMIT 1;"""
+        command = f"SELECT ticketscategory FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
     if result and result[0]:
-        for c in ctx.guild.categories:
+        print(guild)
+        print(guild.categories)
+        print(guild.categories[0])
+        for c in guild.categories:
             if c.id == result[0]:
                 perms = c.permissions_for(member)
                 if perms.send_messages:
@@ -403,7 +406,7 @@ async def new(ctx):
 async def persist(ctx):
     if ctx.guild is None:
         return
-    if is_staff(ctx.author, ctx.guild.id):
+    if is_staff(ctx.author, ctx.guild):
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
             command = f"UPDATE tickets SET expiry = NULL WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
@@ -416,7 +419,7 @@ async def persist(ctx):
 async def unpersist(ctx):
     if ctx.guild is None:
         return
-    if is_staff(ctx.author, ctx.guild.id):
+    if is_staff(ctx.author, ctx.guild):
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
             command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
@@ -429,7 +432,7 @@ async def unpersist(ctx):
 async def resolved(ctx):
     if ctx.guild is None:
         return
-    if is_staff(ctx.author, ctx.guild.id):
+    if is_staff(ctx.author, ctx.guild):
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
             command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
