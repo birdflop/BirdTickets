@@ -82,6 +82,10 @@ async def on_ready():
                         expiry int(11),
                         FOREIGN KEY (parentguild) REFERENCES guilds (guildid));"""
         cursor.execute(command)
+    # todo: fix case where ticket expires while restarting
+    # go through all tickets
+    # if 0 < expiry < current time
+        # saveandclose
 
 
 @bot.event
