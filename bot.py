@@ -24,10 +24,10 @@ async def get_prefix(client, message):
         cursor = db.cursor()
         command = f"SELECT prefix FROM guilds WHERE guildid = {message.channel.guild.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
-        if result:
-            return result[0]
-        return '-'
+    result = cursor.fetchone()
+    if result:
+        return result[0]
+    return '-'
 
 
 async def get_prefix_from_guild(guild_id):
@@ -35,10 +35,10 @@ async def get_prefix_from_guild(guild_id):
         cursor = db.cursor()
         command = f"SELECT prefix FROM guilds WHERE guildid = {guild_id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
-        if result:
-            return result[0]
-        return '-'
+    result = cursor.fetchone()
+    if result:
+        return result[0]
+    return '-'
 
 bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
 bot.remove_command('help')
@@ -87,7 +87,7 @@ async def on_ready():
         cursor = db.cursor()
         command = f"SELECT expiry, ticketchannel FROM tickets WHERE expiry > 0;"
         cursor.execute(command)
-        result = cursor.fetchall()
+    result = cursor.fetchall()
     for r in result:
         if 0 < r[0] < now:
             channel = bot.get_channel(r[1])
@@ -110,7 +110,7 @@ async def on_member_remove(member):
         cursor = db.cursor()
         command = f"SELECT ticketchannel FROM tickets WHERE owner = {member.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
+    result = cursor.fetchone()
     if result:
         for r in result:
             channel = await bot.fetch_channel(r)
@@ -128,7 +128,7 @@ async def add(ctx, user: discord.Member):
         cursor = db.cursor()
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
+    result = cursor.fetchone()
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
         embed_var = discord.Embed(title='User Added', color=0x22dd22, description=f'{user.mention} has been added to {ctx.channel.mention}')
@@ -169,7 +169,7 @@ def is_staff(member, guild):
         cursor = db.cursor()
         command = f"SELECT ticketscategory FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
+    result = cursor.fetchone()
     if result and result[0]:
         for c in guild.categories:
             if c.id == result[0]:
@@ -194,7 +194,7 @@ async def remove(ctx, user: discord.Member):
         cursor = db.cursor()
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
+    result = cursor.fetchone()
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=None, send_messages=None)
         embed_var = discord.Embed(title='User Removed', color=0xdd2222, description=f'{user.mention} has been removed from {ctx.channel.mention}')
@@ -209,7 +209,7 @@ async def close(ctx):
         cursor = db.cursor()
         command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
+    result = cursor.fetchone()
     if result:
         if result[0] > 0:
             await saveandclose(ctx.channel)
@@ -233,13 +233,14 @@ async def saveandclose(channel):
         cursor = db.cursor()
         command = f"SELECT transcriptchannel FROM guilds WHERE guildid = {channel.guild.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
-        transcript_channel_id = result[0]
+    result = cursor.fetchone()
+    transcript_channel_id = result[0]
+    with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
         command = f"SELECT owner FROM tickets WHERE ticketchannel = {channel.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
-        ticket_owner = bot.get_user(result[0])
+    result = cursor.fetchone()
+    ticket_owner = bot.get_user(result[0])
     transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
     transcript_channel = None
     if transcript_channel_id:
@@ -336,7 +337,7 @@ async def query(ctx, arg):
         with sqlite3.connect("data.db") as db:
             cursor = db.cursor()
             cursor.execute(arg)
-            result = cursor.fetchall()
+        result = cursor.fetchall()
         if result:
             await ctx.author.send(result)
         else:
@@ -442,8 +443,8 @@ async def resolved(ctx):
                 cursor = db.cursor()
                 command = f"SELECT owner FROM tickets WHERE ticketchannel = {ctx.channel.id} LIMIT 1;"
                 cursor.execute(command)
-                result = cursor.fetchone()
-                owner = bot.get_user(result[0])
+            result = cursor.fetchone()
+            owner = bot.get_user(result[0])
             await ctx.channel.send(f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
 
 
@@ -458,7 +459,7 @@ async def on_raw_reaction_add(payload):
             cursor = db.cursor()
             command = f"SELECT COUNT(*) FROM guilds WHERE panelmessage = {payload.message_id} LIMIT 1;"
             cursor.execute(command)
-            result = cursor.fetchone()
+        result = cursor.fetchone()
         if result and result[0] > 0:
             guild = bot.get_guild(payload.guild_id)
             channel = discord.utils.get(guild.channels, id=payload.channel_id)
@@ -475,7 +476,7 @@ async def on_raw_reaction_add(payload):
                     cursor = db.cursor()
                     command = f"SELECT COUNT(*) FROM tickets WHERE ticketchannel = {payload.channel_id} LIMIT 1;"
                     cursor.execute(command)
-                    result = cursor.fetchone()
+                result = cursor.fetchone()
                 if result and result[0] > 0:
                     guild = bot.get_guild(payload.guild_id)
                     await saveandclose(discord.utils.get(guild.channels, id=payload.channel_id))
@@ -486,7 +487,7 @@ async def create_ticket(guild, member):
         cursor = db.cursor()
         command = f"SELECT ticketchannel FROM tickets WHERE parentguild = {guild.id} AND owner = {member.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
+    result = cursor.fetchone()
     if result:
         channel = discord.utils.get(guild.channels, id=result[0])
         if channel:
@@ -502,7 +503,7 @@ async def create_ticket(guild, member):
         cursor = db.cursor()
         command = f"SELECT ticketscategory, nextticketid FROM guilds WHERE guildid = {guild.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
+    result = cursor.fetchone()
     if result:
         category = discord.utils.get(guild.categories, id=result[0])
         nextid = result[1]
@@ -556,7 +557,7 @@ async def repeating_task():
         cursor = db.cursor()
         command = f"SELECT ticketchannel, owner, expiry FROM tickets WHERE expiry > 0;"
         cursor.execute(command)
-        result = cursor.fetchall()
+    result = cursor.fetchall()
     if result:
         for r in result:
             expiry = r[2]
