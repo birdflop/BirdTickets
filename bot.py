@@ -62,7 +62,7 @@ async def set_prefix(ctx, prefix):
 
 @bot.event
 async def on_ready():
-    t = time.strftime("%d/%m/%Y %H:%M:%S")
+    t = time.strftime("%m/%d/%Y %I:%M:%S &p")
     print(f"[{t}] I am running")
     await bot.change_presence(activity=discord.Game(name="birdflop.com"))
     with sqlite3.connect("data.db") as db:
