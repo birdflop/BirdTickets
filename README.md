@@ -1,4 +1,4 @@
-Premium tickets without the premium.
+## Premium tickets without the premium.
 
 # Features
 1. Automatically close tickets if the ticket is left empty 1 hour after creation.
