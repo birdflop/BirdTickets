@@ -10,6 +10,7 @@ import asyncio
 import requests
 import json
 import time
+from datetime import datetime
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -61,8 +62,8 @@ async def set_prefix(ctx, prefix):
 
 @bot.event
 async def on_ready():
-    time = now.strftime("%d/%m/%Y %H:%M:%S")
-    print(f"[{time}] I am running")
+    t = time.strftime("%d/%m/%Y %H:%M:%S")
+    print(f"[{t}] I am running")
     await bot.change_presence(activity=discord.Game(name="birdflop.com"))
     with sqlite3.connect("data.db") as db:
         cursor = db.cursor()
