@@ -137,7 +137,7 @@ async def add(ctx, user: discord.Member):
 async def help(ctx):
     if ctx.guild is None:
         return
-    embed_var = discord.Embed(title='BirdTickets Commands', color=39393)
+    embed_var = discord.Embed(title='BirdTickets Commands', color=0x6592e6)
     embed_var.add_field(name="Player commands",
                         value="__new__ - Create a new ticket\n"
                               "__close__ - Close an existing ticket\n"
@@ -180,7 +180,7 @@ def is_staff(member, guild_id):
 
 @bot.command(name='invite', help='Get the bot''s invite link')
 async def invite(ctx):
-    embed_var = discord.Embed(title='BirdTickets Invite', color=39393, description="https://discord.com/api/oauth2/authorize?client_id=809975422640717845&permissions=126032&scope=bot")
+    embed_var = discord.Embed(title='BirdTickets Invite', color=0x6592e6, description="See setup instructions [here](https://github.com/Pemigrade/BirdTickets)")
     await ctx.reply(embed=embed_var)
 
 
@@ -246,20 +246,20 @@ async def saveandclose(channel):
             embed_var = discord.Embed(title=channel.name,
                                       description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
                                                   f"Text transcript at [bin.birdflop.com]({binflop_link}).",
-                                      color=39393)
+                                      color=0x6592e6)
             await transcript_channel.send(embed=embed_var)
             await transcript_channel.send(file=transcript_file_1)
-            embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=39393)
+            embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x6592e6)
             await msg_var.edit(embed=embed_var)
     if truncated:
         global messages_limit
         embed_var = discord.Embed(title='Ticket Transcript',
                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over {messages_limit} messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                 color=39393)
+                                 color=0x6592e6)
     else:
         embed_var = discord.Embed(title='Ticket Transcript',
                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                 color=39393)
+                                 color=0x6592e6)
     try:
         await ticket_owner.send(embed=embed_var, file=transcript_file_2)
     except discord.errors.Forbidden:
@@ -375,7 +375,7 @@ async def remove_log(ctx):
 
 @bot.command(name='panel', help='Create a panel')
 @has_permissions(administrator=True)
-async def panel(ctx, color=39393):
+async def panel(ctx, color=0x6592e6):
     if ctx.guild is None:
         return
     channel = ctx.channel
@@ -510,7 +510,7 @@ async def create_ticket(guild, member):
         channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
         channel_id = channel.id
         await channel.set_permissions(member, read_messages=True, send_messages=True)
-        embed = discord.Embed(title="Closing Tickets", description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket", color=39393)
+        embed = discord.Embed(title="Closing Tickets", description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket", color=0x6592e6)
         ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
         await ticket_message.add_reaction("🔒")
         await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
