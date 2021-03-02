@@ -164,6 +164,7 @@ def is_staff(member, guild_id):
                 perms = c.permissions_for(member)
                 if perms.send_messages:
                     return True
+                return False
     return False
 
 
