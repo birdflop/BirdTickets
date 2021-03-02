@@ -62,7 +62,7 @@ async def set_prefix(ctx, prefix):
 
 @bot.event
 async def on_ready():
-    t = time.strftime("%m/%d/%Y %I:%M:%S %p")
+    t = time.strftime("%b %-d %-I:%-M:%-S %p")
     print(f"[{t}] I am running")
     await bot.change_presence(activity=discord.Game(name="birdflop.com"))
     with sqlite3.connect("data.db") as db:
@@ -82,10 +82,15 @@ async def on_ready():
                         expiry int(11),
                         FOREIGN KEY (parentguild) REFERENCES guilds (guildid));"""
         cursor.execute(command)
-    # todo: fix case where ticket expires while restarting
-    # go through all tickets
-    # if 0 < expiry < current time
-        # saveandclose
+    now = int(time.time())
+    with sqlite3.connect("data.db") as db:
+        cursor = db.cursor()
+        command = f"SELECT expiry, ticketchannel FROM tickets LIMIT 1;"
+        cursor.execute(command)
+        result = cursor.fetchall()
+    for r in result:
+        if 0 < r[0] < now:
+            saveandclose(bot.get_channel(r[1]))
 
 
 @bot.event
