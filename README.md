@@ -15,7 +15,7 @@ Premium tickets without the premium.
 5. Give your support team permission to the category.
 6. Set the category with `-setcategory <category_id>`. You may need to enable developer mode to get the category ID.
 7. (Optional) Use the `-panel` command wherever you want the panel to be.
-8. (Optional) Create a transcript channel with `-setlog`.
+8. (Optional) Create a transcript channel with `-setlog <channel_mention>`.
 
 # Support
 If you run into any issues or bugs, you can ask for help in the [Birdflop Hosting Discord](https://discord.gg/ZrRvTMu).
