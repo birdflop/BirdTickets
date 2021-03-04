@@ -419,10 +419,10 @@ async def persist(ctx):
     if is_staff(ctx.author, ctx.guild):
         cursor = db.cursor()
         command = f"UPDATE tickets SET expiry = NULL WHERE channel = {ctx.channel.id} LIMIT 1;"
-        cursor = cursor.execute(command)
+        cursor.execute(command)
         db.commit()
-        # todo check it is a ticket
-        await ctx.reply("This ticket will now persist")
+        if cursor.rowcount == 1:
+            await ctx.reply("This ticket will now persist")
 
 
 @bot.command(name='unpersist', help='Make the ticket unpersist')
@@ -434,8 +434,8 @@ async def unpersist(ctx):
         command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE channel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         db.commit()
-        # todo check it is a ticket
-        await ctx.reply("This ticket will no longer persist")
+        if cursor.rowcount == 1:
+            await ctx.reply("This ticket will no longer persist")
 
 
 @bot.command(name='resolved', help='Makes the ticket expire soon')
@@ -445,17 +445,17 @@ async def resolved(ctx):
     if is_staff(ctx.author, ctx.guild):
         cursor = db.cursor()
         command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE channel = {ctx.channel.id};"
-        cursor = cursor.execute(command)
-        db.commit()
-        # todo check it is a ticket
-        await ctx.message.delete()
-        cursor = db.cursor()
-        command = f"SELECT creator FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
-        result = cursor.fetchone()
-        owner = bot.get_user(result[0])
-        await ctx.channel.send(
-            f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
+        db.commit()
+        if cursor.rowcount == 1:
+            await ctx.message.delete()
+            cursor = db.cursor()
+            command = f"SELECT creator FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
+            cursor.execute(command)
+            result = cursor.fetchone()
+            owner = bot.get_user(result[0])
+            await ctx.channel.send(
+                f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
 
 
 @bot.event
