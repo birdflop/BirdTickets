@@ -15,7 +15,8 @@ import mysql.connector
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 messages_limit = 2000
-db = mysql.connector.connect(host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'), password=os.getenv('DB_PASS'), database="s136_data")
+db = mysql.connector.connect(host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'), password=os.getenv('DB_PASS'),
+                             database="s136_data")
 
 
 async def get_prefix(client, message):
@@ -38,6 +39,7 @@ async def get_prefix_from_guild(guild_id):
     if result:
         return result[0]
     return '-'
+
 
 bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
 bot.remove_command('help')
@@ -97,7 +99,6 @@ async def on_ready():
 
 @bot.event
 async def on_guild_join(guild):
-
     cursor = db.cursor()
     command = f"""INSERT INTO guilds (id, panel, category, next, transcript, prefix)
                   VALUES({guild.id}, NULL, NULL, 1, NULL, '-');"""
@@ -130,7 +131,8 @@ async def add(ctx, user: discord.Member):
     result = cursor.fetchone()
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
-        embed_var = discord.Embed(title='User Added', color=0x22dd22, description=f'{user.mention} has been added to {ctx.channel.mention}')
+        embed_var = discord.Embed(title='User Added', color=0x22dd22,
+                                  description=f'{user.mention} has been added to {ctx.channel.mention}')
         await ctx.send(embed=embed_var)
 
 
@@ -180,7 +182,8 @@ def is_staff(member, guild):
 
 @bot.command(name='invite', help='Get the bot''s invite link')
 async def invite(ctx):
-    embed_var = discord.Embed(title='BirdTickets Invite', color=0x6592e6, description="See setup instructions [here](https://github.com/Pemigrade/BirdTickets)")
+    embed_var = discord.Embed(title='BirdTickets Invite', color=0x6592e6,
+                              description="See setup instructions [here](https://github.com/Pemigrade/BirdTickets)")
     await ctx.reply(embed=embed_var)
 
 
@@ -194,7 +197,8 @@ async def remove(ctx, user: discord.Member):
     result = cursor.fetchone()
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=None, send_messages=None)
-        embed_var = discord.Embed(title='User Removed', color=0xdd2222, description=f'{user.mention} has been removed from {ctx.channel.mention}')
+        embed_var = discord.Embed(title='User Removed', color=0xdd2222,
+                                  description=f'{user.mention} has been removed from {ctx.channel.mention}')
         await ctx.send(embed=embed_var)
 
 
@@ -246,17 +250,18 @@ async def saveandclose(channel):
                                       color=0x6592e6)
             await transcript_channel.send(embed=embed_var)
             await transcript_channel.send(file=transcript_file_1)
-            embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.', color=0x6592e6)
+            embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.',
+                                      color=0x6592e6)
             await msg_var.edit(embed=embed_var)
     if truncated:
         global messages_limit
         embed_var = discord.Embed(title='Ticket Transcript',
-                                 description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over {messages_limit} messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                 color=0x6592e6)
+                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over {messages_limit} messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                  color=0x6592e6)
     else:
         embed_var = discord.Embed(title='Ticket Transcript',
-                                 description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                 color=0x6592e6)
+                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                  color=0x6592e6)
     try:
         await ticket_owner.send(embed=embed_var, file=transcript_file_2)
     except discord.errors.Forbidden:
@@ -302,7 +307,9 @@ async def get_transcript(channel):
     transcript = await chat_exporter.raw_export(channel, messages_html, 'America/New_York')
 
     # make transcript file
-    transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
+    transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()),
+                                                        filename=f'{channel.name}{truncated}.html'), discord.File(
+        io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
 
     # Send transcript
     return transcript_file_1, transcript_file_2, binflop_link, bool(truncated)
@@ -376,7 +383,8 @@ async def panel(ctx, color=0x6592e6):
     if ctx.guild is None:
         return
     channel = ctx.channel
-    embed_var = discord.Embed(title="Need Help?", color=int(color), description="React below to create a support ticket.")
+    embed_var = discord.Embed(title="Need Help?", color=int(color),
+                              description="React below to create a support ticket.")
     p = await channel.send(embed=embed_var)
     await p.add_reaction('🎟️')
     cursor = db.cursor()
@@ -438,7 +446,8 @@ async def resolved(ctx):
         cursor.execute(command)
         result = cursor.fetchone()
         owner = bot.get_user(result[0])
-        await ctx.channel.send(f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
+        await ctx.channel.send(
+            f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
 
 
 @bot.event
@@ -502,8 +511,11 @@ async def create_ticket(guild, member):
         db.commit()
         channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
         await channel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True)
-        embed = discord.Embed(title="Closing Tickets", description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket", color=0x6592e6)
-        ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
+        embed = discord.Embed(title="Closing Tickets",
+                              description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
+                              color=0x6592e6)
+        ticket_message = await channel.send(
+            f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
         await ticket_message.add_reaction("🔒")
         await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
         cursor = db.cursor()
@@ -511,6 +523,7 @@ async def create_ticket(guild, member):
                         VALUES({channel.id}, {member.id}, {guild.id}, {int(time.time()) + 30 * 60});"""
         cursor.execute(command)
         db.commit()
+
 
 @bot.event
 async def on_message(message):
@@ -536,4 +549,31 @@ async def on_command_error(ctx, error):
         print(f"Bot does not have permissions in {ctx.guild.name}")
 
 
+@tasks.loop(seconds=1)
+async def repeating_task():
+    now = int(time.time())
+    cursor = db.cursor()
+    command = f"SELECT channel, creator, expiry FROM tickets WHERE expiry > 0;"
+    cursor.execute(command)
+    result = cursor.fetchall()
+    if result:
+        for r in result:
+            expiry = r[2]
+            if expiry - now == 24 * 60 * 60:
+                channel = await bot.fetch_channel(r[0])
+                owner = bot.get_user(r[1])
+                await channel.send(
+                    f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to delete the ticket. {owner.mention}")
+            elif expiry - now == 15 * 60:
+                channel = await bot.fetch_channel(r[0])
+                owner = bot.get_user(r[1])
+                if not await channel.history().get(author__id=owner.id):
+                    await channel.send(
+                        f"{owner.mention}, are you there? This ticket will automatically close after 15 minutes if you do not describe your issue.")
+            elif expiry - now == 0:
+                channel = await bot.fetch_channel(r[0])
+                await channel.send("This ticket has been automatically closed.")
+                await saveandclose(channel)
+
+repeating_task.start()
 bot.run(TOKEN)
