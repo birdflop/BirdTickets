@@ -87,14 +87,22 @@ async def on_ready():
     db.commit()
     now = int(time.time())
     cursor = db.cursor()
-    command = f"SELECT expiry, channel FROM tickets WHERE expiry > 0;"
+    command = f"SELECT expiry, channel FROM tickets WHERE expiry > 0 AND expiry < {now};"
     cursor.execute(command)
     result = cursor.fetchall()
     for r in result:
         if 0 < r[0] < now:
             channel = bot.get_channel(r[1])
-            await channel.send("This ticket has been automatically closed.")
-            await saveandclose(channel)
+            if channel:
+                await channel.send("This ticket has been automatically closed.")
+                await saveandclose(channel)
+            else:
+                cursor = db.cursor()
+                command = f"DELETE FROM tickets WHERE channel = {r[1]};"
+                cursor.execute(command)
+                db.commit()
+        else:
+            print("[ERROR] THIS SHOULD NEVER HAPPEN BUT IF IT DOES I NEED TO FIX")
 
 
 @bot.event
