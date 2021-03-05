@@ -247,19 +247,9 @@ async def saveandclose(channel):
     result = cursor.fetchone()
     ticket_owner = bot.get_user(result[0])
     transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
-    transcript_channel = None
-    if transcript_channel_id:
-        transcript_channel = discord.utils.get(channel.guild.channels, id=transcript_channel_id)
-        if transcript_channel:
-            embed_var = discord.Embed(title=channel.name,
-                                      description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
-                                                  f"Text transcript at [bin.birdflop.com]({binflop_link}).",
-                                      color=0x6592e6)
-            await transcript_channel.send(embed=embed_var)
-            await transcript_channel.send(file=transcript_file_1)
-            embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.',
-                                      color=0x6592e6)
-            await msg_var.edit(embed=embed_var)
+    embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.',
+                              color=0x6592e6)
+    await msg_var.edit(embed=embed_var)
     if truncated:
         global messages_limit
         embed_var = discord.Embed(title='Ticket Transcript',
@@ -271,9 +261,17 @@ async def saveandclose(channel):
                                   color=0x6592e6)
     try:
         await ticket_owner.send(embed=embed_var, file=transcript_file_2)
+        accepted_dm = ""
     except discord.errors.Forbidden:
+        accepted_dm = f" {ticket_owner.name}#{ticket_owner.discriminator} could not be sent a transcript"
+    if transcript_channel_id:
+        transcript_channel = bot.get_channel(transcript_channel_id)
         if transcript_channel:
-            await transcript_channel.send(ticket_owner.name + " does not accept DMs")
+            embed_var = discord.Embed(title=channel.name,
+                                      description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
+                                                  f"Text transcript at [bin.birdflop.com]({binflop_link}).{accepted_dm}",
+                                      color=0x6592e6)
+            await transcript_channel.send(embed=embed_var, file=transcript_file_1)
     cursor = db.cursor()
     command = f"DELETE FROM tickets WHERE channel = {channel.id};"
     cursor.execute(command)
