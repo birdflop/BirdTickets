@@ -108,7 +108,7 @@ async def on_ready():
 @bot.event
 async def on_guild_join(guild):
     cursor = db.cursor()
-    command = f"""INSERT INTO guilds (id, panel, category, next, transcript, prefix)
+    command = f"""INSERT IGNORE INTO guilds (id, panel, category, next, transcript, prefix)
                   VALUES({guild.id}, NULL, NULL, 1, NULL, '-');"""
     cursor.execute(command)
     db.commit()
