@@ -120,13 +120,12 @@ async def on_member_remove(member):
     command = f"SELECT channel FROM tickets WHERE creator = {member.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
-    if result:
-        for r in result:
-            channel = await bot.fetch_channel(r)
-            guild = channel.guild
-            if discord.utils.get(guild.members, id=int(member.id)) is None:
-                await channel.send("The ticket owner left the Discord. Closing ticket...")
-                await saveandclose(channel)
+    if result and result[0]:
+        channel = await bot.fetch_channel(result[0])
+        guild = channel.guild
+        if discord.utils.get(guild.members, id=int(member.id)) is None:
+            await channel.send("The ticket owner left the Discord. Closing ticket...")
+            await saveandclose(channel)
 
 
 @bot.command(name='add', help='Add someone to a ticket')
