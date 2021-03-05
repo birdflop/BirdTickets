@@ -350,7 +350,8 @@ async def q(ctx, arg):
         if result:
             await ctx.author.send(result)
         else:
-            await ctx.author.send("No results")
+            rows = cursor.rowcount
+            await ctx.author.send(f" {rows} rows updated")
 
 
 @bot.command(name='setlog', help='Set the log channel')
@@ -496,7 +497,7 @@ async def create_ticket(guild, member):
     cursor.execute(command)
     result = cursor.fetchone()
     if result:
-        channel = discord.utils.get(guild.channels, id=result[0])
+        channel = guild.get_channel(result[0])
         if channel:
             reply = f"You already have a ticket open. Please state your issue here {member.mention}"
             await channel.send(reply)
@@ -538,6 +539,9 @@ async def on_message(message):
     if message.type == discord.MessageType.pins_add and message.author.id == bot.user.id:
         await message.delete()
     if not message.author.bot:
+        if message.content == "<@!809975422640717845>":
+            prefix = await get_prefix_from_guild(message.guild.id)
+            await message.reply(f"my prefix is {prefix}")
         cursor = db.cursor()
         command = f"UPDATE tickets SET expiry = 0 WHERE channel = {message.channel.id} AND creator = {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
         cursor.execute(command)
@@ -569,18 +573,18 @@ async def repeating_task():
         for r in result:
             expiry = r[2]
             if expiry - now == 24 * 60 * 60:
-                channel = await bot.fetch_channel(r[0])
+                channel = bot.get_channel(r[0])
                 owner = bot.get_user(r[1])
                 await channel.send(
                     f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to close the ticket now. {owner.mention}")
             elif expiry - now == 15 * 60:
-                channel = await bot.fetch_channel(r[0])
+                channel = bot.get_channel(r[0])
                 owner = bot.get_user(r[1])
                 if not await channel.history().get(author__id=owner.id):
                     await channel.send(
                         f"{owner.mention}, this ticket will automatically close after 15 minutes if you do not describe your issue.")
             elif expiry - now == 0:
-                channel = await bot.fetch_channel(r[0])
+                channel = bot.get_channel(r[0])
                 await channel.send("This ticket has been automatically closed.")
                 await saveandclose(channel)
 
