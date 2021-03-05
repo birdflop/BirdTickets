@@ -200,10 +200,10 @@ async def remove(ctx, user: discord.Member):
     if ctx.guild is None:
         return
     cursor = db.cursor()
-    command = f"SELECT COUNT(*) FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
+    command = f"SELECT creator FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
-    if result and result[0] > 0:
+    if result and result[0] != user.id:
         await ctx.channel.set_permissions(user, read_messages=None, send_messages=None)
         embed_var = discord.Embed(title='User Removed', color=0xdd2222,
                                   description=f'{user.mention} has been removed from {ctx.channel.mention}')
