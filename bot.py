@@ -139,8 +139,8 @@ async def add(ctx, user: discord.Member):
     if result and result[0] > 0:
         await ctx.channel.set_permissions(user, read_messages=True, send_messages=True)
         embed_var = discord.Embed(title='User Added', color=0x22dd22,
-                                  description=f'{user.mention} has been added to {ctx.channel.mention}')
-        await ctx.send(embed=embed_var)
+                                  description=f'{ctx.author} added {user.mention} to {ctx.channel.mention}')
+        await ctx.reply(embed=embed_var)
 
 
 @bot.command(name='help', help='Shows this message')
@@ -205,8 +205,8 @@ async def remove(ctx, user: discord.Member):
     if result and result[0] != user.id:
         await ctx.channel.set_permissions(user, read_messages=None, send_messages=None)
         embed_var = discord.Embed(title='User Removed', color=0xdd2222,
-                                  description=f'{user.mention} has been removed from {ctx.channel.mention}')
-        await ctx.send(embed=embed_var)
+                                  description=f'{ctx.author} removed {user.mention} from {ctx.channel.mention}')
+        await ctx.reply(embed=embed_var)
 
 
 @bot.command(name='close', help='Close a ticket')
