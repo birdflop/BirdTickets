@@ -563,7 +563,7 @@ async def on_command_error(ctx, error):
 async def repeating_task():
     now = int(time.time())
     cursor = db.cursor()
-    command = f"SELECT channel, creator, expiry FROM tickets WHERE expiry > 0;"
+    command = f"SELECT channel, creator, expiry, guild FROM tickets WHERE expiry > 0;"
     cursor.execute(command)
     result = cursor.fetchall()
     if result:
@@ -573,7 +573,7 @@ async def repeating_task():
                 channel = bot.get_channel(r[0])
                 owner = bot.get_user(r[1])
                 await channel.send(
-                    f"This ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say -close to close the ticket now. {owner.mention}")
+                    f"{owner.mention}, this ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say `{await get_prefix_from_guild(r[3])}close` to close the ticket now.")
             elif expiry - now == 15 * 60:
                 channel = bot.get_channel(r[0])
                 owner = bot.get_user(r[1])
