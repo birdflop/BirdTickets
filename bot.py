@@ -337,11 +337,12 @@ async def set_category(ctx, category_id):
         await ctx.reply(response)
 
 
-@bot.command(name='q', help='Debug command')
-async def q(ctx, arg):
+@bot.command(name='sql', help='Debug command')
+async def sql(ctx, *args):
     if ctx.author.id == 322764955516665856 or ctx.author.id == 223585930093658122:
+        query = " ".join(args[:])
         cursor = db.cursor()
-        cursor.execute(arg)
+        cursor.execute(query)
         db.commit()
         result = cursor.fetchall()
         if result:
