@@ -291,7 +291,7 @@ async def get_transcript(channel):
         with open(f"transcript-{channel.id}.txt", "w", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
-                msg = message.content
+                msg = message.clean_content
                 if not msg:
                     if message.embeds:
                         for embed in message.embeds:
