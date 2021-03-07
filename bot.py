@@ -22,7 +22,7 @@ db = mysql.connector.connect(host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'
 async def get_prefix(client, message):
     if isinstance(message.channel, discord.channel.DMChannel):
         return '-'
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT prefix FROM guilds WHERE id = {message.channel.guild.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -32,7 +32,7 @@ async def get_prefix(client, message):
 
 
 async def get_prefix_from_guild(guild_id):
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT prefix FROM guilds WHERE id = {guild_id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -52,7 +52,7 @@ async def set_prefix(ctx, prefix):
     if ctx.guild is None:
         return
     if len(prefix) <= 2:
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         cursor.execute(f"UPDATE guilds SET prefix = '{prefix}' WHERE id = {ctx.guild.id};")
         db.commit()
         response = f"Prefix set to {prefix}."
@@ -66,7 +66,7 @@ async def on_ready():
     t = time.strftime("%b %d, %I:%M:%S %p")
     print(f"[{t}] I am running")
     await bot.change_presence(activity=discord.Game(name="birdflop.com"))
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = """CREATE TABLE IF NOT EXISTS guilds (
                     id bigint PRIMARY KEY,
                     panel bigint,
@@ -76,7 +76,7 @@ async def on_ready():
                     prefix char(2) DEFAULT '-');"""
     cursor.execute(command)
     db.commit()
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = """CREATE TABLE IF NOT EXISTS tickets (
                  channel bigint PRIMARY KEY,
                  creator bigint NOT NULL,
@@ -86,7 +86,7 @@ async def on_ready():
     cursor.execute(command)
     db.commit()
     now = int(time.time())
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT expiry, channel FROM tickets WHERE expiry > 0 AND expiry < {now};"
     cursor.execute(command)
     result = cursor.fetchall()
@@ -97,7 +97,7 @@ async def on_ready():
                 await channel.send("This ticket has been automatically closed.")
                 await saveandclose(channel)
             else:
-                cursor = db.cursor()
+                cursor = db.cursor(buffered=True)
                 command = f"DELETE FROM tickets WHERE channel = {r[1]};"
                 cursor.execute(command)
                 db.commit()
@@ -107,7 +107,7 @@ async def on_ready():
 
 @bot.event
 async def on_guild_join(guild):
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"""INSERT IGNORE INTO guilds (id, panel, category, next, transcript, prefix)
                   VALUES({guild.id}, NULL, NULL, 1, NULL, '-');"""
     cursor.execute(command)
@@ -116,7 +116,7 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_member_remove(member):
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT channel FROM tickets WHERE creator = {member.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -132,7 +132,7 @@ async def on_member_remove(member):
 async def add(ctx, user: discord.Member):
     if ctx.guild is None:
         return
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT COUNT(*) FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -173,7 +173,7 @@ async def help(ctx):
 
 
 def is_staff(member, guild):
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT category FROM guilds WHERE id = {guild.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -198,7 +198,7 @@ async def invite(ctx):
 async def remove(ctx, user: discord.Member):
     if ctx.guild is None:
         return
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT creator FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -213,7 +213,7 @@ async def remove(ctx, user: discord.Member):
 async def close(ctx):
     if ctx.guild is None:
         return
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT COUNT(*) FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -222,7 +222,7 @@ async def close(ctx):
             await saveandclose(ctx.channel)
         else:
             # check the user for their ticket channel in that guild
-            cursor = db.cursor()
+            cursor = db.cursor(buffered=True)
             command = f"SELECT channel FROM tickets WHERE creator = {ctx.author.id} AND guild = {ctx.guild.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
@@ -236,12 +236,12 @@ async def close(ctx):
 async def saveandclose(channel):
     embed_var = discord.Embed(title='Preparing Transcript', description='Please wait...', color=0xffff00)
     msg_var = await channel.send(embed=embed_var)
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT transcript FROM guilds WHERE id = {channel.guild.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
     transcript_channel_id = result[0]
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT creator FROM tickets WHERE channel = {channel.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -272,7 +272,7 @@ async def saveandclose(channel):
                                                   f"Text transcript at [bin.birdflop.com]({binflop_link}).{accepted_dm}",
                                       color=0x6592e6)
             await transcript_channel.send(embed=embed_var, file=transcript_file_1)
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"DELETE FROM tickets WHERE channel = {channel.id};"
     cursor.execute(command)
     db.commit()
@@ -327,7 +327,7 @@ async def set_category(ctx, category_id):
         return
     category = discord.utils.get(ctx.guild.categories, id=int(category_id))
     if category:
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         command = f"""UPDATE guilds
                         SET category = {category_id}
                         WHERE id = {ctx.guild.id};"""
@@ -341,7 +341,7 @@ async def set_category(ctx, category_id):
 async def sql(ctx, *args):
     if ctx.author.id == 322764955516665856 or ctx.author.id == 223585930093658122:
         query = " ".join(args[:])
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         cursor.execute(query)
         db.commit()
         result = cursor.fetchall()
@@ -359,7 +359,7 @@ async def set_log(ctx, channel: discord.TextChannel):
         return
     channel = discord.utils.get(ctx.guild.channels, id=channel.id)
     if channel:
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         command = f"""UPDATE guilds
                         SET transcript = {channel.id}
                         WHERE id = {ctx.guild.id};"""
@@ -374,7 +374,7 @@ async def set_log(ctx, channel: discord.TextChannel):
 async def remove_log(ctx):
     if ctx.guild is None:
         return
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"""UPDATE guilds
                 SET transcript = NULL
                 WHERE id = {ctx.guild.id};"""
@@ -394,7 +394,7 @@ async def panel(ctx, color=0x6592e6):
                               description="React below to create a support ticket.")
     p = await channel.send(embed=embed_var)
     await p.add_reaction('🎟️')
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"""UPDATE guilds
                     SET panel = {p.id}
                     WHERE id = {ctx.guild.id};"""
@@ -416,7 +416,7 @@ async def persist(ctx):
     if ctx.guild is None:
         return
     if is_staff(ctx.author, ctx.guild):
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         command = f"UPDATE tickets SET expiry = NULL WHERE channel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         db.commit()
@@ -429,7 +429,7 @@ async def unpersist(ctx):
     if ctx.guild is None:
         return
     if is_staff(ctx.author, ctx.guild):
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE channel = {ctx.channel.id} LIMIT 1;"
         cursor.execute(command)
         db.commit()
@@ -442,13 +442,13 @@ async def resolved(ctx):
     if ctx.guild is None:
         return
     if is_staff(ctx.author, ctx.guild):
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         command = f"UPDATE tickets SET expiry = {int(time.time()) + 12 * 60 * 60} WHERE channel = {ctx.channel.id};"
         cursor.execute(command)
         db.commit()
         if cursor.rowcount == 1:
             await ctx.message.delete()
-            cursor = db.cursor()
+            cursor = db.cursor(buffered=True)
             command = f"SELECT creator FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
             cursor.execute(command)
             result = cursor.fetchone()
@@ -464,7 +464,7 @@ async def on_raw_reaction_add(payload):
     if payload.guild_id is None:
         return
     if payload.emoji.name == "🎟️":
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         command = f"SELECT COUNT(*) FROM guilds WHERE panel = {payload.message_id} LIMIT 1;"
         cursor.execute(command)
         result = cursor.fetchone()
@@ -480,7 +480,7 @@ async def on_raw_reaction_add(payload):
         message = await channel.fetch_message(payload.message_id)
         for r in message.reactions:
             if r.me and r.emoji == "🔒" and r.count > 1:
-                cursor = db.cursor()
+                cursor = db.cursor(buffered=True)
                 command = f"SELECT COUNT(*) FROM tickets WHERE channel = {payload.channel_id} LIMIT 1;"
                 cursor.execute(command)
                 result = cursor.fetchone()
@@ -490,7 +490,7 @@ async def on_raw_reaction_add(payload):
 
 
 async def create_ticket(guild, member):
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT channel FROM tickets WHERE guild = {guild.id} AND creator = {member.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
@@ -501,18 +501,18 @@ async def create_ticket(guild, member):
             await channel.send(reply)
             return
         else:
-            cursor = db.cursor()
+            cursor = db.cursor(buffered=True)
             command = f"DELETE FROM tickets WHERE channel = {result[0]} LIMIT 1;"
             cursor.execute(command)
             db.commit()
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT category, next FROM guilds WHERE id = {guild.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
     if result:
         category = discord.utils.get(guild.categories, id=result[0])
         nextid = result[1]
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         command = f"UPDATE guilds SET next = {nextid + 1} WHERE id = {guild.id};"
         cursor.execute(command)
         db.commit()
@@ -525,7 +525,7 @@ async def create_ticket(guild, member):
             f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
         await ticket_message.add_reaction("🔒")
         await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         command = f"""INSERT INTO tickets (channel, creator, guild, expiry)
                         VALUES({channel.id}, {member.id}, {guild.id}, {int(time.time()) + 30 * 60});"""
         cursor.execute(command)
@@ -538,17 +538,19 @@ async def on_message(message):
         await message.delete()
     if not message.author.bot:
         if message.content == "<@!809975422640717845>":
-            prefix = await get_prefix_from_guild(message.guild.id)
-            await message.reply(f"my prefix is {prefix}")
-        cursor = db.cursor()
-        command = f"UPDATE tickets SET expiry = 0 WHERE channel = {message.channel.id} AND creator = {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
-        cursor.execute(command)
-        db.commit()
-        if cursor.rowcount == 1 and is_staff(message.author, message.guild):
-            cursor = db.cursor()
-            command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE channel = {message.channel.id} AND creator != {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
+            if message.guild:
+                prefix = await get_prefix_from_guild(message.guild.id)
+                await message.reply(f"my prefix is {prefix}")
+        if message.guild:
+            cursor = db.cursor(buffered=True)
+            command = f"UPDATE tickets SET expiry = 0 WHERE channel = {message.channel.id} AND creator = {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
             cursor.execute(command)
             db.commit()
+            if cursor.rowcount == 1 and is_staff(message.author, message.guild):
+                cursor = db.cursor(buffered=True)
+                command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE channel = {message.channel.id} AND creator != {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
+                cursor.execute(command)
+                db.commit()
     await bot.process_commands(message)
 
 
@@ -563,7 +565,7 @@ async def on_command_error(ctx, error):
 @tasks.loop(seconds=1)
 async def repeating_task():
     now = int(time.time())
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True)
     command = f"SELECT channel, creator, expiry, guild FROM tickets WHERE expiry > 0;"
     cursor.execute(command)
     result = cursor.fetchall()
