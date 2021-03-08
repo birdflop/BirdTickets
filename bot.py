@@ -294,7 +294,7 @@ async def get_transcript(channel):
                 text_transcript.write(f"{created_at} {message.author.name}#{message.author.discriminator}\n")
                 msg = message.clean_content
                 while "\n\n" in msg:
-                    msg.replace("\n\n", "\n")
+                    msg = msg.replace("\n\n", "\n")
                 if msg:
                     text_transcript.write(f"{msg}\n")
                 for embed in message.embeds:
