@@ -297,8 +297,9 @@ async def get_transcript(channel):
                     msg = msg.replace("\n\n", "\n")
                 if msg:
                     text_transcript.write(f"{msg}\n")
-                for embed in message.embeds:
-                    text_transcript.write(f"{embed.title} - {embed.description}\n")
+                if message.author.bot:
+                    for embed in message.embeds:
+                        text_transcript.write(f"{embed.title} - {embed.description}\n")
                 for attachment in message.attachments:
                     text_transcript.write(f"{attachment.proxy_url}\n")
                 text_transcript.write("\n")
