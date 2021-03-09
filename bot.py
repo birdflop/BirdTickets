@@ -518,7 +518,10 @@ async def create_ticket(guild, member):
         cursor.execute(command)
         db.commit()
         channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
-        await channel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True)
+        try:
+            await channel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True)
+        except discord.Forbidden:
+            await channel.send("Error: permission issue. Do I have permission to set permissions?")
         embed = discord.Embed(title="Closing Tickets",
                               description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
                               color=0x6592e6)
