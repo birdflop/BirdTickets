@@ -91,18 +91,15 @@ async def on_ready():
     cursor.execute(command)
     result = cursor.fetchall()
     for r in result:
-        if 0 < r[0] < now:
-            channel = bot.get_channel(r[1])
-            if channel:
-                await channel.send("This ticket has been automatically closed.")
-                await saveandclose(channel)
-            else:
-                cursor = db.cursor(buffered=True)
-                command = f"DELETE FROM tickets WHERE channel = {r[1]};"
-                cursor.execute(command)
-                db.commit()
+        channel = bot.get_channel(r[1])
+        if channel:
+            await channel.send("This ticket has been automatically closed.")
+            await saveandclose(channel)
         else:
-            print("[ERROR] THIS SHOULD NEVER HAPPEN BUT IF IT DOES I NEED TO FIX")
+            cursor = db.cursor(buffered=True)
+            command = f"DELETE FROM tickets WHERE channel = {r[1]};"
+            cursor.execute(command)
+            db.commit()
 
 
 @bot.event
@@ -517,11 +514,15 @@ async def create_ticket(guild, member):
         command = f"UPDATE guilds SET next = {nextid + 1} WHERE id = {guild.id};"
         cursor.execute(command)
         db.commit()
-        channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
+        try:
+            channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
+        except discord.Forbidden:
+            print(f"No permission to create a channel in {guild.name}")
         try:
             await channel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True)
         except discord.Forbidden:
-            await channel.send("Error: permission issue. Do I have permission to set permissions?")
+            await channel.send("Error: Do I have permission to set channel permissions?")
+            print(f"No permission to set channel permissions in {guild.name}")
         embed = discord.Embed(title="Closing Tickets",
                               description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
                               color=0x6592e6)
