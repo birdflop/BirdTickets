@@ -516,25 +516,21 @@ async def create_ticket(guild, member):
         db.commit()
         try:
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
+            await channel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True)
+            embed = discord.Embed(title="Closing Tickets",
+                                  description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
+                                  color=0x6592e6)
+            ticket_message = await channel.send(
+                f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
+            await ticket_message.add_reaction("🔒")
+            await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
+            cursor = db.cursor(buffered=True)
+            command = f"""INSERT INTO tickets (channel, creator, guild, expiry)
+                            VALUES({channel.id}, {member.id}, {guild.id}, {int(time.time()) + 30 * 60});"""
+            cursor.execute(command)
+            db.commit()
         except discord.Forbidden:
             print(f"No permission to create a channel in {guild.name}")
-        try:
-            await channel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True)
-        except discord.Forbidden:
-            await channel.send("Error: Do I have permission to set channel permissions?")
-            print(f"No permission to set channel permissions in {guild.name}")
-        embed = discord.Embed(title="Closing Tickets",
-                              description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
-                              color=0x6592e6)
-        ticket_message = await channel.send(
-            f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
-        await ticket_message.add_reaction("🔒")
-        await ticket_message.pin(reason=f'Pinned first message in #{channel.name}')
-        cursor = db.cursor(buffered=True)
-        command = f"""INSERT INTO tickets (channel, creator, guild, expiry)
-                        VALUES({channel.id}, {member.id}, {guild.id}, {int(time.time()) + 30 * 60});"""
-        cursor.execute(command)
-        db.commit()
 
 
 @bot.event
