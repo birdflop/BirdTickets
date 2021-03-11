@@ -451,8 +451,7 @@ async def resolved(ctx):
             cursor.execute(command)
             result = cursor.fetchone()
             owner = bot.get_user(result[0])
-            await ctx.channel.send(
-                f"{owner.mention}, this ticket has been marked as resolved and will automatically close in 12 hours. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
+            await ctx.channel.send(f"{owner.mention}, this ticket has been marked as resolved and will automatically close after 12 hours if you do not respond. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
 
 
 @bot.event
