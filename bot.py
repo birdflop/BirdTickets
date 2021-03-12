@@ -222,14 +222,14 @@ async def get_expiry(ctx, channel: discord.TextChannel):
 
 
 @bot.command(name='setexpiry', help='Set when a ticket will expire')
-async def set_expiry(ctx, channel: discord.TextChannel, time):
+async def set_expiry(ctx, channel: discord.TextChannel, t):
     if ctx.guild is None:
         return
     if not is_staff(ctx.author, ctx.guild):
         return
-    date_time = datetime.datetime.strptime(time, "%H:%M:%S")
-    a_timedelta = date_time - datetime.datetime(1900, 1, 1)
-    seconds = a_timedelta.total_seconds()
+    date_time = datetime.strptime(t, "%H:%M:%S")
+    a_timedelta = date_time - datetime(1900, 1, 1)
+    seconds = int(a_timedelta.total_seconds())
     new_time = seconds + int(time.time())
     cursor = db.cursor(buffered=True)
     command = f"UPDATE tickets SET expiry = {new_time} WHERE channel = {channel.id} AND guild = {ctx.guild.id} LIMIT 1;"
@@ -237,6 +237,8 @@ async def set_expiry(ctx, channel: discord.TextChannel, time):
     db.commit()
     if cursor.rowcount == 1:
         await ctx.reply("Expiry updated")
+    else:
+        await ctx.reply("That is not a ticket channel")
 
 
 @bot.command(name='remove', help='Remove someone from a ticket')
@@ -518,7 +520,10 @@ async def on_raw_reaction_add(payload):
             channel = discord.utils.get(guild.channels, id=payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             member = await guild.fetch_member(payload.user_id)
-            await message.remove_reaction('🎟️', member)
+            try:
+                await message.remove_reaction('🎟️', member)
+            except discord.Forbidden:
+                print(f"Missing permission in {guild.name}")
             await create_ticket(guild, member)
     elif payload.emoji.name == "🔒":
         channel = bot.get_channel(payload.channel_id)
@@ -535,6 +540,7 @@ async def on_raw_reaction_add(payload):
 
 
 async def create_ticket(guild, member):
+    print(f"attempting to create a ticket for {member.name} in {guild.name} ({guild.id})")
     cursor = db.cursor(buffered=True)
     command = f"SELECT channel FROM tickets WHERE guild = {guild.id} AND creator = {member.id} LIMIT 1;"
     cursor.execute(command)
