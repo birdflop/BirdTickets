@@ -203,11 +203,13 @@ async def getexpiry(ctx, channel: discord.TextChannel):
     cursor.execute(command)
     result = cursor.fetchone()
     if result:
+        print(result)
         if result[0] is None:
             await ctx.reply("That ticket is persisting")
         elif result[0] == 0:
             await ctx.reply("That ticket is waiting on a staff response")
         else:
+            print(result[0])
             now = int(time.time())
             diff = result[0] - now
             min, sec = divmod(diff, 60)
@@ -572,7 +574,7 @@ async def on_message(message):
             command = f"UPDATE tickets SET expiry = 0 WHERE channel = {message.channel.id} AND creator = {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
             cursor.execute(command)
             db.commit()
-            if cursor.rowcount == 1 and is_staff(message.author, message.guild):
+            if cursor.rowcount == 0 and is_staff(message.author, message.guild):
                 cursor = db.cursor(buffered=True)
                 command = f"UPDATE tickets SET expiry = {int(time.time()) + 48 * 60 * 60} WHERE channel = {message.channel.id} AND creator != {message.author.id} AND expiry IS NOT NULL LIMIT 1;"
                 cursor.execute(command)
