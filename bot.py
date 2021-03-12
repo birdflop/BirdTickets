@@ -204,7 +204,6 @@ async def get_expiry(ctx, channel: discord.TextChannel):
     cursor.execute(command)
     result = cursor.fetchone()
     if result:
-        print(result)
         if result[0] is None:
             await ctx.reply("That ticket is persisting")
         elif result[0] == 0:
@@ -212,7 +211,6 @@ async def get_expiry(ctx, channel: discord.TextChannel):
         else:
             now = int(time.time())
             diff = result[0] - now
-            print(diff)
             hr = diff // 3600
             diff %= 3600
             min = diff // 60
