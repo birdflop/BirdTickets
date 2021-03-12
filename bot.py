@@ -199,11 +199,20 @@ async def getexpiry(ctx, channel: discord.TextChannel):
     if not is_staff(ctx.author, ctx.guild):
         return
     cursor = db.cursor(buffered=True)
-    command = f"SELECT expiry FROM tickets WHERE channel = {channel.id} LIMIT 1;"
+    command = f"SELECT expiry FROM tickets WHERE channel = {channel.id} AND guild = {ctx.guild.id} LIMIT 1;"
     cursor.execute(command)
     result = cursor.fetchone()
     if result:
-        await ctx.reply(result[0])
+        if result[0] is None:
+            await ctx.reply("That ticket is persisting")
+        elif result[0] == 0:
+            await ctx.reply("That ticket is waiting on a staff response")
+        else:
+            now = int(time.time())
+            diff = result[0] - now
+            min, sec = divmod(diff, 60)
+            hr, min = divmod(m, 60)
+            await ctx.reply(f"That ticket will expire in {hr} hours, {min} minutes, and {sec} seconds")
     else:
         await ctx.reply("That is not a ticket")
 
