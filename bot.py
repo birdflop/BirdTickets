@@ -228,10 +228,22 @@ async def set_expiry(ctx, channel: discord.TextChannel, t):
         return
     if not is_staff(ctx.author, ctx.guild):
         return
-    date_time = datetime.strptime(t, "%H:%M:%S")
-    a_timedelta = date_time - datetime(1900, 1, 1)
-    seconds = int(a_timedelta.total_seconds())
-    new_time = seconds + int(time.time())
+    if "s" in t or "S" in t:
+        t = t.replace("s", "").replace("S", "")
+        diff = int(t)
+    elif "m" in t or "M" in t:
+        t = t.replace("m", "").replace("M", "")
+        diff = int(t) * 60
+    elif "h" in t or "H" in t:
+        t = t.replace("h", "").replace("H", "")
+        diff = int(t) * 60 * 60
+    elif "d" in t or "D" in t:
+        t = t.replace("d", "").replace("D", "")
+        diff = int(t) * 24 * 60 * 60
+    else:
+        ctx.reply("Invalid format")
+        return
+    new_time = diff + int(time.time())
     cursor = db.cursor(buffered=True)
     command = f"UPDATE tickets SET expiry = {new_time} WHERE channel = {channel.id} AND guild = {ctx.guild.id} LIMIT 1;"
     cursor.execute(command)
