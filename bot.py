@@ -157,7 +157,8 @@ async def help(ctx):
                             value="__persist__ - Prevent a ticket from expiring\n"
                                   "__unpersist__ - Make a ticket unpersist\n"
                                   "__resolved__ - Mark a ticket as resolved\n"
-                                  "__getexpiry__ - See when a ticket will expire",
+                                  "__getexpiry__ - See when a ticket will expire\n"
+                                  "__setexpiry__ - Set the expiry of a ticket",
                             inline=False)
     if ctx.author.guild_permissions.administrator:
         embed_var.add_field(name="Admin commands",
