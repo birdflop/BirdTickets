@@ -156,7 +156,8 @@ async def help(ctx):
         embed_var.add_field(name="Staff commands",
                             value="__persist__ - Prevent a ticket from expiring\n"
                                   "__unpersist__ - Make a ticket unpersist\n"
-                                  "__resolved__ - Mark a ticket as resolved",
+                                  "__resolved__ - Mark a ticket as resolved\n"
+                                  "__getexpiry__ - See when a ticket will expire",
                             inline=False)
     if ctx.author.guild_permissions.administrator:
         embed_var.add_field(name="Admin commands",
@@ -189,6 +190,22 @@ async def invite(ctx):
     embed_var = discord.Embed(title='BirdTickets Invite', color=0x6592e6,
                               description="See setup instructions [here](https://github.com/Pemigrade/BirdTickets/blob/master/README.md#setup)")
     await ctx.reply(embed=embed_var)
+
+
+@bot.command(name='getexpiry', help='See when a ticket will expire')
+async def getexpiry(ctx, channel: discord.TextChannel):
+    if ctx.guild is None:
+        return
+    if not is_staff(ctx.author, ctx.guild):
+        return
+    cursor = db.cursor(buffered=True)
+    command = f"SELECT expiry FROM tickets WHERE channel = {channel.id} LIMIT 1;"
+    cursor.execute(command)
+    result = cursor.fetchone()
+    if result:
+        await ctx.reply(result[0])
+    else:
+        await ctx.reply("That is not a ticket")
 
 
 @bot.command(name='remove', help='Remove someone from a ticket')
