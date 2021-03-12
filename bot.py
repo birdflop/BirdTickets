@@ -187,7 +187,7 @@ def is_staff(member, guild):
 @bot.command(name='invite', help='Get the bot''s invite link')
 async def invite(ctx):
     embed_var = discord.Embed(title='BirdTickets Invite', color=0x6592e6,
-                              description="See setup instructions [here](https://github.com/Pemigrade/BirdTickets)")
+                              description="See setup instructions [here](https://github.com/Pemigrade/BirdTickets/blob/master/README.md#setup)")
     await ctx.reply(embed=embed_var)
 
 
