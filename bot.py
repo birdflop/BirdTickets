@@ -141,34 +141,85 @@ async def add(ctx, user: discord.Member):
 
 
 @bot.command(name='help', help='Shows this message')
-async def help(ctx):
+async def help(ctx, arg=None):
     if ctx.guild is None:
         return
-    embed_var = discord.Embed(title='BirdTickets Commands', color=0x6592e6)
-    embed_var.add_field(name="Player commands",
-                        value="__new__ - Create a new ticket\n"
-                              "__close__ - Close an existing ticket\n"
-                              "__add__ - Add someone to a ticket\n"
-                              "__remove__ - Remove someone from a ticket\n"
-                              "__invite__ - Invite BirdTickets to your server",
-                        inline=False)
-    if is_staff(ctx.author, ctx.guild):
-        embed_var.add_field(name="Staff commands",
-                            value="__persist__ - Prevent a ticket from expiring\n"
-                                  "__unpersist__ - Make a ticket unpersist\n"
-                                  "__resolved__ - Mark a ticket as resolved\n"
-                                  "__getexpiry__ - See when a ticket will expire\n"
-                                  "__setexpiry__ - Set the expiry of a ticket",
+    if arg is None:
+        embed_var = discord.Embed(title='BirdTickets Commands', color=0x6592e6)
+        embed_var.add_field(name="Player commands",
+                            value="__new__ - Create a new ticket\n"
+                                  "__close__ - Close an existing ticket\n"
+                                  "__add__ - Add someone to a ticket\n"
+                                  "__remove__ - Remove someone from a ticket\n"
+                                  "__invite__ - Invite BirdTickets to your server",
                             inline=False)
-    if ctx.author.guild_permissions.administrator:
-        embed_var.add_field(name="Admin commands",
-                            value="__panel__ - Create a support panel\n"
-                                  "__setprefix__ - Change the prefix\n"
-                                  "__setcategory__ - Set the ticket category\n"
-                                  "__setlog__ - Save transcripts to a channel\n"
-                                  "__removelog__ - Stop saving transcripts",
-                            inline=False)
-    await ctx.reply(embed=embed_var)
+        if is_staff(ctx.author, ctx.guild):
+            embed_var.add_field(name="Staff commands",
+                                value="__persist__ - Prevent a ticket from expiring\n"
+                                      "__unpersist__ - Make a ticket unpersist\n"
+                                      "__resolved__ - Mark a ticket as resolved\n"
+                                      "__getexpiry__ - See when a ticket will expire\n"
+                                      "__setexpiry__ - Set the expiry of a ticket",
+                                inline=False)
+        if ctx.author.guild_permissions.administrator:
+            embed_var.add_field(name="Admin commands",
+                                value="__panel__ - Create a support panel\n"
+                                      "__setprefix__ - Change the prefix\n"
+                                      "__setcategory__ - Set the ticket category\n"
+                                      "__setlog__ - Save transcripts to a channel\n"
+                                      "__removelog__ - Stop saving transcripts",
+                                inline=False)
+        await ctx.reply(embed=embed_var)
+    else:
+        arg = arg.lower()
+        if ctx.author.guild_permissions.administrator:
+            if arg == "panel":
+                await ctx.reply("This command requires no additional requirements")
+                return
+            if arg == "setprefix":
+                await ctx.reply("Usage: `setprefix <prefix>`")
+                return
+            if arg == "setcategory":
+                await ctx.reply("Usage: `setcategory <category>`\nExample: `setcategory 123456789012345678`")
+                return
+            if arg == "setlog":
+                await ctx.reply("Usage: `setlog <channel>`")
+                return
+            if arg == "removelog":
+                await ctx.reply("This command requires no additional requirements")
+                return
+        if is_staff(ctx.author, ctx.guild):
+            if arg == "persist":
+                await ctx.reply("This command requires no additional requirements")
+                return
+            if arg == "unpersist":
+                await ctx.reply("This command requires no additional requirements")
+                return
+            if arg == "resolved":
+                await ctx.reply("This command requires no additional requirements")
+                return
+            if arg == "getexpiry":
+                await ctx.reply("Usage: `getexpiry <channel>`")
+                return
+            if arg == "setexpiry":
+                await ctx.reply("Usage: `setexpiry <channel> <time>`\nExample: `setexpiry #ticket-34 5h`")
+                return
+        if arg == "new":
+            await ctx.reply("This command requires no additional requirements")
+            return
+        if arg == "close":
+            await ctx.reply("This command requires no additional requirements")
+            return
+        if arg == "add":
+            await ctx.reply("Usage: `add <player>`")
+            return
+        if arg == "remove":
+            await ctx.reply("Usage: `remove <player>`")
+            return
+        if arg == "invite":
+            await ctx.reply("This command requires no additional requirements")
+            return
+        await ctx.reply("That command does not exist")
 
 
 def is_staff(member, guild):
