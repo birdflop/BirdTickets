@@ -221,6 +221,24 @@ async def get_expiry(ctx, channel: discord.TextChannel):
         await ctx.reply("That is not a ticket")
 
 
+@bot.command(name='setexpiry', help='Set when a ticket will expire')
+async def set_expiry(ctx, channel: discord.TextChannel, time):
+    if ctx.guild is None:
+        return
+    if not is_staff(ctx.author, ctx.guild):
+        return
+    date_time = datetime.datetime.strptime(time, "%H:%M:%S")
+    a_timedelta = date_time - datetime.datetime(1900, 1, 1)
+    seconds = a_timedelta.total_seconds()
+    new_time = seconds + int(time.time())
+    cursor = db.cursor(buffered=True)
+    command = f"UPDATE tickets SET expiry = {new_time} WHERE channel = {channel.id} AND guild = {ctx.guild.id} LIMIT 1;"
+    cursor.execute(command)
+    db.commit()
+    if cursor.rowcount == 1:
+        await ctx.reply("Expiry updated")
+
+
 @bot.command(name='remove', help='Remove someone from a ticket')
 async def remove(ctx, user: discord.Member):
     if ctx.guild is None:
