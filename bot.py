@@ -193,7 +193,7 @@ async def invite(ctx):
 
 
 @bot.command(name='getexpiry', help='See when a ticket will expire')
-async def getexpiry(ctx, channel: discord.TextChannel):
+async def get_expiry(ctx, channel: discord.TextChannel):
     if ctx.guild is None:
         return
     if not is_staff(ctx.author, ctx.guild):
@@ -209,12 +209,14 @@ async def getexpiry(ctx, channel: discord.TextChannel):
         elif result[0] == 0:
             await ctx.reply("That ticket is waiting on a staff response")
         else:
-            print(result[0])
             now = int(time.time())
             diff = result[0] - now
-            min, sec = divmod(diff, 60)
-            hr, min = divmod(m, 60)
-            await ctx.reply(f"That ticket will expire in {hr} hours, {min} minutes, and {sec} seconds")
+            print(diff)
+            hr = diff // 3600
+            diff %= 3600
+            min = diff // 60
+            diff %= 60
+            await ctx.reply(f"That ticket will expire in {hr} hours, {min} minutes, and {diff} seconds")
     else:
         await ctx.reply("That is not a ticket")
 
