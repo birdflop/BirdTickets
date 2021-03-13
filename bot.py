@@ -516,7 +516,7 @@ async def panel(ctx, color=0x6592e6):
 async def new(ctx):
     if ctx.guild is None:
         return
-    member = await ctx.guild.fetch_member(ctx.author.id)
+    member = ctx.author
     guild = ctx.guild
     await create_ticket(guild, member)
 
@@ -580,8 +580,8 @@ async def on_raw_reaction_add(payload):
         if result and result[0] > 0:
             guild = bot.get_guild(payload.guild_id)
             channel = discord.utils.get(guild.channels, id=payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
-            member = await guild.fetch_member(payload.user_id)
+            message = channel.get_partial_message(payload.message_id)
+            member = guild.get_member(payload.user_id)
             try:
                 await message.remove_reaction('🎟️', member)
             except discord.Forbidden:
@@ -589,7 +589,7 @@ async def on_raw_reaction_add(payload):
             await create_ticket(guild, member)
     elif payload.emoji.name == "🔒":
         channel = bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        message = channel.get_partial_message(payload.message_id)
         for r in message.reactions:
             if r.me and r.emoji == "🔒" and r.count > 1:
                 cursor = db.cursor(buffered=True)
