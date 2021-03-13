@@ -434,20 +434,19 @@ async def get_transcript(channel):
 @has_permissions(administrator=True)
 async def set_category(ctx, category: discord.CategoryChannel = None):
     if ctx.guild is None:
-        ctx.reply("This command can only be used in a guild")
+        await ctx.reply("This command can only be used in a guild")
         return
     if not category:
-        ctx.reply("Please specify a category id. You may need to turn on developer mode.")
+        await ctx.reply("Please specify a category id. You may need to turn on developer mode.")
         return
     else:
         cursor = db.cursor(buffered=True)
         command = f"""UPDATE guilds
-                        SET category = {category_id}
+                        SET category = {category.id}
                         WHERE id = {ctx.guild.id};"""
         cursor.execute(command)
         db.commit()
-        response = f"Category set to {category_id}"
-        await ctx.reply(response)
+        await ctx.reply(f"Category set to {category.mention}")
 
 
 @bot.command(name='sql', help='Debug command')
