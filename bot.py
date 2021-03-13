@@ -14,7 +14,6 @@ import mysql.connector
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-messages_limit = 2000
 db = mysql.connector.connect(host=os.getenv('DB_HOST'), user=os.getenv('DB_USER'), password=os.getenv('DB_PASS'),
                              database="s136_data")
 
@@ -375,9 +374,8 @@ async def saveandclose(channel):
                               color=0x6592e6)
     await msg_var.edit(embed=embed_var)
     if truncated:
-        global messages_limit
         embed_var = discord.Embed(title='Ticket Transcript',
-                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over {messages_limit} messages, so it has been truncated to the most recent {messages_limit}. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over 2000 messages, so it has been truncated. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
                                   color=0x6592e6)
     else:
         embed_var = discord.Embed(title='Ticket Transcript',
@@ -404,12 +402,10 @@ async def saveandclose(channel):
 
 
 async def get_transcript(channel):
-    global messages_limit
-    messages = await channel.history(limit=messages_limit).flatten()
+    messages = await channel.history(limit=2000).flatten()
     messages_html = messages[:]
-    # Warn if file reaches message number limit
     truncated = ''
-    if len(messages) == messages_limit:
+    if len(messages) == 2000:
         truncated = '-truncated'
     try:
         with open(f"transcript-{channel.id}.txt", "w", encoding="utf-8") as text_transcript:
@@ -436,12 +432,9 @@ async def get_transcript(channel):
 
     transcript = await chat_exporter.raw_export(channel, messages_html, 'America/New_York')
 
-    # make transcript file
-    transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()),
-                                                        filename=f'{channel.name}{truncated}.html'), discord.File(
-        io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
+    transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), \
+                                           discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
 
-    # Send transcript
     return transcript_file_1, transcript_file_2, binflop_link, bool(truncated)
 
 
@@ -644,7 +637,7 @@ async def create_ticket(guild, member):
     if result:
         category = discord.utils.get(guild.categories, id=result[0])
         if not category:
-            guild.owner.send(f"{member.name} tried creating a ticket in your guild, but you have not yet set up a ticket category. Please use {get_prefix_from_guild(guild.id)}setcategory in your guild")
+            guild.owner.send(f"{member.name} tried creating a ticket in your guild, but you have not yet set up a ticket category. Please use {await get_prefix_from_guild(guild.id)}setcategory in your guild")
         nextid = result[1]
         cursor = db.cursor(buffered=True)
         command = f"UPDATE guilds SET next = {nextid + 1} WHERE id = {guild.id};"
