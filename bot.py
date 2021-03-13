@@ -41,7 +41,7 @@ async def get_prefix_from_guild(guild_id):
     return '-'
 
 
-bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
+bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all(), case_insensitive=True)
 bot.remove_command('help')
 bot.remove_command('invite')
 
