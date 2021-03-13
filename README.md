@@ -18,6 +18,7 @@
 6. Set the category with `-setcategory <category_id>`. You may need to enable developer mode to get the category ID.
 7. (Optional) Use the `-panel` command wherever you want the panel to be.
 8. (Optional) Create a transcript channel with `-setlog <channel_mention>`.
+9. (Optional) Change the prefix with `-setprefix <new_prefix>`.
 
 # Support
 If you run into any issues or bugs, you can ask for help in the [Birdflop Hosting Discord](https://discord.gg/ZrRvTMu).
