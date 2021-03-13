@@ -369,7 +369,7 @@ async def saveandclose(channel):
     cursor.execute(command)
     result = cursor.fetchone()
     ticket_owner = bot.get_user(result[0])
-    transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcript(channel)
+    transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcripts(channel)
     embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.',
                               color=0x6592e6)
     await msg_var.edit(embed=embed_var)
@@ -401,13 +401,10 @@ async def saveandclose(channel):
     await channel.delete()
 
 
-async def get_transcript(channel):
+async def get_transcripts(channel):
     messages = await channel.history(limit=2000).flatten()
-    messages_html = messages[:]
-    truncated = ''
-    if len(messages) == 2000:
-        truncated = '-truncated'
     try:
+        # convert messages to .txt
         with open(f"transcript-{channel.id}.txt", "w", encoding="utf-8") as text_transcript:
             for message in reversed(messages):
                 created_at = message.created_at.strftime("[%m-%d-%y %I:%M:%S %p]")
@@ -423,6 +420,7 @@ async def get_transcript(channel):
                 for attachment in message.attachments:
                     text_transcript.write(f"{attachment.proxy_url}\n")
                 text_transcript.write("\n")
+        # upload .txt to bin.birdflop.com
         with open(f"transcript-{channel.id}.txt", "r", encoding="utf-8") as text_transcript:
             req = requests.post('https://bin.birdflop.com/documents', data=text_transcript.read().encode('utf-8'))
             key = json.loads(req.content)['key']
@@ -430,12 +428,15 @@ async def get_transcript(channel):
     finally:
         os.remove(f'transcript-{channel.id}.txt')
 
-    transcript = await chat_exporter.raw_export(channel, messages_html, 'America/New_York')
+    # create html transcripts
+    transcript = await chat_exporter.raw_export(channel, messages[:], 'America/New_York')
+    truncated = ""
+    if len(messages) == 2000:
+        truncated = "-truncated"
+    html1, html2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), \
+                   discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
 
-    transcript_file_1, transcript_file_2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), \
-                                           discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
-
-    return transcript_file_1, transcript_file_2, binflop_link, bool(truncated)
+    return html1, html2, binflop_link, bool(truncated)
 
 
 @bot.command(name='setcategory', help='Set the ticket category')
@@ -468,8 +469,7 @@ async def sql(ctx, *args):
         if result:
             await ctx.author.send(result)
         else:
-            rows = cursor.rowcount
-            await ctx.author.send(f" {rows} rows updated")
+            await ctx.author.send(f"{cursor.rowcount} rows updated")
 
 
 @bot.command(name='setlog', help='Set the log channel')
