@@ -52,7 +52,7 @@ async def set_prefix(ctx, prefix = None):
     if ctx.guild is None:
         return
     if prefix is None:
-        ctx.reply("You must specify a prefix")
+        await ctx.reply("You must specify a prefix")
         return
     if len(prefix) <= 2:
         cursor = db.cursor(buffered=True)
@@ -61,7 +61,7 @@ async def set_prefix(ctx, prefix = None):
         response = f"Prefix set to {prefix}."
         await ctx.channel.send(response)
     else:
-        ctx.reply(f"`{prefix}` is too long. The maximum prefix length is 2.")
+        await ctx.reply(f"`{prefix}` is too long. The maximum prefix length is 2.")
 
 
 @bot.event
@@ -257,7 +257,7 @@ async def get_expiry(ctx, channel: discord.TextChannel = None):
     if not is_staff(ctx.author, ctx.guild):
         return
     if channel is None:
-        ctx.reply("You must specify a channel")
+        await ctx.reply("You must specify a channel")
         return
     cursor = db.cursor(buffered=True)
     command = f"SELECT expiry FROM tickets WHERE channel = {channel.id} AND guild = {ctx.guild.id} LIMIT 1;"
@@ -281,12 +281,12 @@ async def get_expiry(ctx, channel: discord.TextChannel = None):
 
 
 @bot.command(name='setexpiry', help='Set when a ticket will expire')
-async def set_expiry(ctx, channel: discord.TextChannel, t):
+async def set_expiry(ctx, channel: discord.TextChannel, t=None):
     if ctx.guild is None:
         return
     if not is_staff(ctx.author, ctx.guild):
         return
-    if channel is None:
+    if t is None:
         await ctx.reply("usage: setexpiry <channel> <time>")
         return
     if "s" in t or "S" in t:
@@ -302,7 +302,7 @@ async def set_expiry(ctx, channel: discord.TextChannel, t):
         t = t.replace("d", "").replace("D", "")
         diff = int(t) * 24 * 60 * 60
     else:
-        ctx.reply("Invalid format")
+        await ctx.reply("Invalid time format")
         return
     new_time = diff + int(time.time())
     cursor = db.cursor(buffered=True)
