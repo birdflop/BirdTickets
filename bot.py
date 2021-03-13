@@ -48,8 +48,11 @@ bot.remove_command('invite')
 
 @bot.command(name='setprefix', help='Set the ticket category')
 @has_permissions(administrator=True)
-async def set_prefix(ctx, prefix):
+async def set_prefix(ctx, prefix = None):
     if ctx.guild is None:
+        return
+    if prefix is None:
+        ctx.reply("You must specify a prefix")
         return
     if len(prefix) <= 2:
         cursor = db.cursor(buffered=True)
@@ -126,8 +129,11 @@ async def on_member_remove(member):
 
 
 @bot.command(name='add', help='Add someone to a ticket')
-async def add(ctx, user: discord.Member):
+async def add(ctx, user: discord.Member = None):
     if ctx.guild is None:
+        return
+    if user is None:
+        await ctx.reply("You must specify a user")
         return
     cursor = db.cursor(buffered=True)
     command = f"SELECT COUNT(*) FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
@@ -245,10 +251,13 @@ async def invite(ctx):
 
 
 @bot.command(name='getexpiry', help='See when a ticket will expire')
-async def get_expiry(ctx, channel: discord.TextChannel):
+async def get_expiry(ctx, channel: discord.TextChannel = None):
     if ctx.guild is None:
         return
     if not is_staff(ctx.author, ctx.guild):
+        return
+    if channel is None:
+        ctx.reply("You must specify a channel")
         return
     cursor = db.cursor(buffered=True)
     command = f"SELECT expiry FROM tickets WHERE channel = {channel.id} AND guild = {ctx.guild.id} LIMIT 1;"
@@ -277,6 +286,9 @@ async def set_expiry(ctx, channel: discord.TextChannel, t):
         return
     if not is_staff(ctx.author, ctx.guild):
         return
+    if channel is None:
+        await ctx.reply("usage: setexpiry <channel> <time>")
+        return
     if "s" in t or "S" in t:
         t = t.replace("s", "").replace("S", "")
         diff = int(t)
@@ -304,8 +316,11 @@ async def set_expiry(ctx, channel: discord.TextChannel, t):
 
 
 @bot.command(name='remove', help='Remove someone from a ticket')
-async def remove(ctx, user: discord.Member):
+async def remove(ctx, user: discord.Member = None):
     if ctx.guild is None:
+        return
+    if user is None:
+        await ctx.reply("You must specify a user")
         return
     cursor = db.cursor(buffered=True)
     command = f"SELECT creator FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
@@ -466,10 +481,12 @@ async def sql(ctx, *args):
 
 @bot.command(name='setlog', help='Set the log channel')
 @has_permissions(administrator=True)
-async def set_log(ctx, channel: discord.TextChannel):
+async def set_log(ctx, channel: discord.TextChannel = None):
     if ctx.guild is None:
         return
-    channel = discord.utils.get(ctx.guild.channels, id=channel.id)
+    if channel is None:
+        await ctx.reply("You must specify a channel")
+        return
     if channel:
         cursor = db.cursor(buffered=True)
         command = f"""UPDATE guilds
