@@ -589,7 +589,7 @@ async def on_raw_reaction_add(payload):
             await create_ticket(guild, member)
     elif payload.emoji.name == "🔒":
         channel = bot.get_channel(payload.channel_id)
-        message = channel.get_partial_message(payload.message_id)
+        message = await channel.fetch_message(payload.message_id)
         for r in message.reactions:
             if r.me and r.emoji == "🔒" and r.count > 1:
                 cursor = db.cursor(buffered=True)
