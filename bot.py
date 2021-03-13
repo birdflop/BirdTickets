@@ -432,11 +432,14 @@ async def get_transcript(channel):
 
 @bot.command(name='setcategory', help='Set the ticket category')
 @has_permissions(administrator=True)
-async def set_category(ctx, category_id):
+async def set_category(ctx, category: discord.CategoryChannel = None):
     if ctx.guild is None:
+        ctx.reply("This command can only be used in a guild")
         return
-    category = discord.utils.get(ctx.guild.categories, id=int(category_id))
-    if category:
+    if not category:
+        ctx.reply("Please specify a category id. You may need to turn on developer mode.")
+        return
+    else:
         cursor = db.cursor(buffered=True)
         command = f"""UPDATE guilds
                         SET category = {category_id}
@@ -624,6 +627,8 @@ async def create_ticket(guild, member):
     result = cursor.fetchone()
     if result:
         category = discord.utils.get(guild.categories, id=result[0])
+        if not category:
+            guild.owner.send(f"{member.name} tried creating a ticket in your guild, but you have not yet set up a ticket category. Please use {get_prefix_from_guild(guild.id)}setcategory in your guild")
         nextid = result[1]
         cursor = db.cursor(buffered=True)
         command = f"UPDATE guilds SET next = {nextid + 1} WHERE id = {guild.id};"
