@@ -614,7 +614,6 @@ async def on_raw_reaction_add(payload):
 
 
 async def create_ticket(guild, member):
-    print(f"Creating a ticket for {member.name} in {guild.name} ({guild.id})")
     cursor = db.cursor(buffered=True)
     command = f"SELECT channel FROM tickets WHERE guild = {guild.id} AND creator = {member.id} LIMIT 1;"
     cursor.execute(command)
@@ -644,8 +643,16 @@ async def create_ticket(guild, member):
         cursor.execute(command)
         db.commit()
         try:
+            print(f"Creating a ticket for {member.name} in {guild.name} ({guild.id})")
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
-            await channel.set_permissions(member, read_messages=True, send_messages=True, view_channel=True)
+            await channel.set_permissions(member, read_messages=True)
+            if not chennel.permissions_for(member).send_messages:
+                print(f"{member.name} still does not have permissions in the channel. Trying again.")
+                await channel.set_permissions(member, read_messages=True)
+                if not chennel.permissions_for(member).send_messages:
+                    print(f"{member.name} still does not have permissions in the channel. Will not try again.")
+                else:
+                    print(f"{member.name} now has permissions in the channel.")
             embed = discord.Embed(title="Closing Tickets",
                                   description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
                                   color=0x6592e6)
