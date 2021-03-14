@@ -651,9 +651,16 @@ async def create_ticket(guild, member):
                 print(f"Channel: {channel.id}\nMember: {member.id}")
                 await channel.set_permissions(member, read_messages=True)
                 if not chennel.permissions_for(member).send_messages:
-                    print(f"{member.name} still does not have permissions in the channel. Will not try again.")
+                    print(f"{member.name} still does not have permissions in the channel. Will wait one second and try again.")
+                    await asyncio.sleep(1)
+                    print(f"Channel: {channel.id}\nMember: {member.id}")
+                    await channel.set_permissions(member, read_messages=True)
+                    if not chennel.permissions_for(member).send_messages:
+                        print(f"{member.name} still does not have permissions in the channel. Will not try again.")
+                    else:
+                        print(f"{member.name} now has permissions in the channel after the second retry")
                 else:
-                    print(f"{member.name} now has permissions in the channel.")
+                    print(f"{member.name} now has permissions in the channel after the first retry.")
             embed = discord.Embed(title="Closing Tickets",
                                   description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
                                   color=0x6592e6)
