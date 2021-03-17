@@ -650,7 +650,7 @@ async def create_ticket(guild, member):
             if not channel.permissions_for(member).read_messages:
                 print(f"{member.name} never got permission in the channel. Trying again.")
                 await channel.set_permissions(member, read_messages=True)
-                await asyncio.sleep(1)
+                await asyncio.sleep(5)
                 if not channel.permissions_for(member).read_messages:
                     print(f"{member.name} still does not have permissions in the channel.")
                 else:
