@@ -636,7 +636,7 @@ async def create_ticket(guild, member):
     if result:
         category = discord.utils.get(guild.categories, id=result[0])
         if not category:
-            guild.owner.send(f"{member.name} tried creating a ticket in your guild, but you have not yet set up a ticket category. Please use {await get_prefix_from_guild(guild.id)}setcategory in your guild")
+            await guild.owner.send(f"{member.name} tried creating a ticket in your guild, but you have not yet set up a ticket category. Please use `{await get_prefix_from_guild(guild.id)}setcategory` in your guild.")
         nextid = result[1]
         cursor = db.cursor(buffered=True)
         command = f"UPDATE guilds SET next = {nextid + 1} WHERE id = {guild.id};"
