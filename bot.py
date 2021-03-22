@@ -694,8 +694,6 @@ async def on_message(message):
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.errors.CommandNotFound):
-        print(f"Command {ctx.message.content} in {ctx.guild.name} not found")
     if isinstance(error, discord.Forbidden):
         print(f"Bot does not have permissions in {ctx.guild.name}")
 
