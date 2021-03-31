@@ -16,6 +16,7 @@
 
    <img src="https://i.imgur.com/JuEkppE.png">
 3. Add `@BirdTickets` and your support team to the category.
+   
    <img src="https://i.imgur.com/wZiE2KR.png">
 4. Set the category with `-setcategory <ticket_category_id>`. You may need to enable developer mode to get the category ID.
 5. (Optional) Use the `-panel` command wherever you want the panel to be.
