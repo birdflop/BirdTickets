@@ -139,10 +139,14 @@ async def add(ctx, user: discord.Member = None):
     cursor.execute(command)
     result = cursor.fetchone()
     if result and result[0] > 0:
-        await ctx.channel.set_permissions(user, read_messages=True)
-        embed_var = discord.Embed(title='User Added', color=0x22dd22,
-                                  description=f'{ctx.author} added {user.mention} to {ctx.channel.mention}')
-        await ctx.reply(embed=embed_var)
+        try:
+            await ctx.channel.set_permissions(user, read_messages=True)
+            embed_var = discord.Embed(title='User Added', color=0x22dd22,
+                                      description=f'{ctx.author} added {user.mention} to {ctx.channel.mention}')
+            await ctx.reply(embed=embed_var)
+        except discord.Forbidden:
+            await ctx.reply("I do not have the necessary permissions to execute your request.")
+            return
 
 
 @bot.command(name='help', help='Shows this message')
@@ -326,10 +330,14 @@ async def remove(ctx, user: discord.Member = None):
     cursor.execute(command)
     result = cursor.fetchone()
     if result and result[0] != user.id:
-        await ctx.channel.set_permissions(user, read_messages=None)
-        embed_var = discord.Embed(title='User Removed', color=0xdd2222,
-                                  description=f'{ctx.author.mention} removed {user.mention} from {ctx.channel.mention}')
-        await ctx.reply(embed=embed_var)
+        try:
+            await ctx.channel.set_permissions(user, read_messages=None)
+            embed_var = discord.Embed(title='User Removed', color=0xdd2222,
+                                      description=f'{ctx.author.mention} removed {user.mention} from {ctx.channel.mention}')
+            await ctx.reply(embed=embed_var)
+        except discord.Forbidden:
+            await ctx.reply("I do not have the necessary permissions to execute your request")
+            return
 
 
 @bot.command(name='close', help='Close a ticket')
@@ -529,7 +537,7 @@ async def new(ctx):
         return
     member = ctx.author
     guild = ctx.guild
-    await create_ticket(guild, member)
+    await create_ticket(guild, member, ctx.channel)
 
 
 @bot.command(name='persist', help='Make the ticket persist')
@@ -568,13 +576,17 @@ async def resolved(ctx):
         cursor.execute(command)
         db.commit()
         if cursor.rowcount == 1:
-            await ctx.message.delete()
-            cursor = db.cursor(buffered=True)
-            command = f"SELECT creator FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
-            cursor.execute(command)
-            result = cursor.fetchone()
-            owner = bot.get_user(result[0])
-            await ctx.channel.send(f"{owner.mention}, this ticket has been marked as resolved and will automatically close after 12 hours if you do not respond. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
+            try:
+                await ctx.message.delete()
+                cursor = db.cursor(buffered=True)
+                command = f"SELECT creator FROM tickets WHERE channel = {ctx.channel.id} LIMIT 1;"
+                cursor.execute(command)
+                result = cursor.fetchone()
+                owner = bot.get_user(result[0])
+                await ctx.channel.send(f"{owner.mention}, this ticket has been marked as resolved and will automatically close after 12 hours if you do not respond. If you still have an issue, please explain it. Otherwise, you can say `{await get_prefix_from_guild(ctx.guild.id)}close` to close the ticket now.")
+            except discord.Forbidden:
+                await ctx.reply("I do not have the necessary permissions to execute your request.")
+                return
 
 
 @bot.event
@@ -596,8 +608,10 @@ async def on_raw_reaction_add(payload):
             try:
                 await message.remove_reaction('🎟️', member)
             except discord.Forbidden:
-                print(f"Missing permission in {guild.name}")
-            await create_ticket(guild, member)
+                print(f"I do not have the necessary permissions to process a request in {guild.name}")
+                await message.channel.send(f"I do not have the necessary permissions to process your request")
+                return
+            await create_ticket(guild, member, message.channel)
     elif payload.emoji.name == "🔒":
         channel = bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
@@ -612,7 +626,7 @@ async def on_raw_reaction_add(payload):
                     await saveandclose(discord.utils.get(guild.channels, id=payload.channel_id))
 
 
-async def create_ticket(guild, member):
+async def create_ticket(guild, member, requested_from_channel):
     cursor = db.cursor(buffered=True)
     command = f"SELECT channel FROM tickets WHERE guild = {guild.id} AND creator = {member.id} LIMIT 1;"
     cursor.execute(command)
@@ -623,11 +637,10 @@ async def create_ticket(guild, member):
             reply = f"{member.mention}, You already have a ticket open. Please state your issue here."
             await channel.send(reply)
             return
-        else:
-            cursor = db.cursor(buffered=True)
-            command = f"DELETE FROM tickets WHERE channel = {result[0]} LIMIT 1;"
-            cursor.execute(command)
-            db.commit()
+        cursor = db.cursor(buffered=True)
+        command = f"DELETE FROM tickets WHERE channel = {result[0]} LIMIT 1;"
+        cursor.execute(command)
+        db.commit()
     cursor = db.cursor(buffered=True)
     command = f"SELECT category, next FROM guilds WHERE id = {guild.id} LIMIT 1;"
     cursor.execute(command)
@@ -635,7 +648,7 @@ async def create_ticket(guild, member):
     if result:
         category = discord.utils.get(guild.categories, id=result[0])
         if not category:
-            await guild.owner.send(f"{member.name} tried creating a ticket in your guild, but you have not yet set up a ticket category. Please have any admin use `{await get_prefix_from_guild(guild.id)}setcategory` in your guild.")
+            await requested_from_channel.send("You have not set up a ticket category. Please have any admin use `{await get_prefix_from_guild(guild.id)}setcategory` in your guild.")
         nextid = result[1]
         cursor = db.cursor(buffered=True)
         command = f"UPDATE guilds SET next = {nextid + 1} WHERE id = {guild.id};"
@@ -647,10 +660,14 @@ async def create_ticket(guild, member):
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
         except discord.Forbidden:
             print(f"Permission error when creating a channel")
+            await requested_from_channel.send(f"I do not have the necessary permissions to process your request")
+            return
         try:
             await channel.set_permissions(member, read_messages=True)
         except discord.Forbidden:
             print(f"Permission error when assigning permissions")
+            await requested_from_channel.send(f"I do not have the necessary permissions to process your request")
+            return
         await asyncio.sleep(1)
         ticket_message = None
         try:
@@ -660,11 +677,15 @@ async def create_ticket(guild, member):
             ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
         except discord.Forbidden:
             print(f"Permission error when sending a message")
+            await requested_from_channel.send(f"I do not have the necessary permissions to function properly")
+            return
         try:
             await ticket_message.add_reaction("🔒")
             await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
         except discord.Forbidden:
             print(f"Permission error when adding a reaction")
+            await channel.send(f"I do not have the necessary permissions to function properly")
+            return
         cursor = db.cursor(buffered=True)
         command = f"""INSERT INTO tickets (channel, creator, guild, expiry)
                         VALUES({channel.id}, {member.id}, {guild.id}, {int(time.time()) + 30 * 60});"""
@@ -713,14 +734,12 @@ async def repeating_task():
             if expiry - now == 24 * 60 * 60:
                 channel = bot.get_channel(r[0])
                 owner = bot.get_user(r[1])
-                await channel.send(
-                    f"{owner.mention}, this ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say `{await get_prefix_from_guild(r[3])}close` to close the ticket now.")
+                await channel.send(f"{owner.mention}, this ticket has been inactive for 24 hours. It will automatically close after 24 more hours if you do not respond. If the issue has been resolved, you can say `{await get_prefix_from_guild(r[3])}close` to close the ticket now.")
             elif expiry - now == 15 * 60:
                 channel = bot.get_channel(r[0])
                 owner = bot.get_user(r[1])
                 if not await channel.history().get(author__id=owner.id):
-                    await channel.send(
-                        f"{owner.mention}, this ticket will automatically close after 15 minutes if you do not describe your issue.")
+                    await channel.send(f"{owner.mention}, this ticket will automatically close after 15 minutes if you do not describe your issue.")
             elif expiry - now == 0:
                 channel = bot.get_channel(r[0])
                 await channel.send("This ticket has been automatically closed.")
