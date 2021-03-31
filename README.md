@@ -4,9 +4,8 @@
 1. Automatically close tickets if the ticket is left empty 1 hour after creation.
 2. Automatically close tickets if the ticket creator leaves the Discord.
 3. Automatically close tickets if the creator fails to respond.
-4. HTML transcripts will be sent to your logs channel and to the ticket owner in PMs.
-5. A reaction panel can be used to open and close tickets.
-6. Commands can be used to open and close tickets.
+4. HTML transcripts will be sent to your logs channel and to the ticket owner in PMs. (Temporarily reduced to just a txt transcript due to an issue with an external module. Expect a fix within a few days)
+5. A reaction panel or commands can be used to open and close tickets.
 7. Custom bot prefix.
 8. Add and remove people from tickets.
 

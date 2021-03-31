@@ -3,7 +3,7 @@ import discord
 from discord.ext.commands import has_permissions
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
-import chat_exporter
+# import chat_exporter
 import io
 import asyncio
 import requests
@@ -369,20 +369,20 @@ async def saveandclose(channel):
     cursor.execute(command)
     result = cursor.fetchone()
     ticket_owner = bot.get_user(result[0])
-    transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcripts(channel)
+    binflop_link, truncated = await get_transcripts(channel)
     embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.',
                               color=0x6592e6)
     await msg_var.edit(embed=embed_var)
     if truncated:
         embed_var = discord.Embed(title='Ticket Transcript',
-                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over 2000 messages, so it has been truncated. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over 2000 messages, so it has been truncated. You can view a text transcript at [bin.birdflop.com]({binflop_link}).',
                                   color=0x6592e6)
     else:
         embed_var = discord.Embed(title='Ticket Transcript',
-                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
+                                  description=f'Thank you for creating a ticket in **{channel.guild.name}**. You can view a text transcript at [bin.birdflop.com]({binflop_link}).',
                                   color=0x6592e6)
     try:
-        await ticket_owner.send(embed=embed_var, file=transcript_file_2)
+        await ticket_owner.send(embed=embed_var)
         accepted_dm = ""
     except discord.errors.Forbidden:
         accepted_dm = f" {ticket_owner.name}#{ticket_owner.discriminator} could not be sent a transcript"
@@ -393,7 +393,7 @@ async def saveandclose(channel):
                                       description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
                                                   f"Text transcript at [bin.birdflop.com]({binflop_link}).{accepted_dm}",
                                       color=0x6592e6)
-            await transcript_channel.send(embed=embed_var, file=transcript_file_1)
+            await transcript_channel.send(embed=embed_var)
     cursor = db.cursor(buffered=True)
     command = f"DELETE FROM tickets WHERE channel = {channel.id};"
     cursor.execute(command)
@@ -429,14 +429,13 @@ async def get_transcripts(channel):
         os.remove(f'transcript-{channel.id}.txt')
 
     # create html transcripts
-    transcript = await chat_exporter.raw_export(channel, messages[:], 'America/New_York')
+    # transcript = await chat_exporter.raw_export(channel, messages[:], 'America/New_York')
     truncated = ""
     if len(messages) == 2000:
         truncated = "-truncated"
-    html1, html2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), \
-                   discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
-
-    return html1, html2, binflop_link, bool(truncated)
+    # html1, html2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), \
+    #               discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
+    return binflop_link, bool(truncated)
 
 
 @bot.command(name='setcategory', help='Set the ticket category')
