@@ -636,38 +636,41 @@ async def create_ticket(guild, member):
     if result:
         category = discord.utils.get(guild.categories, id=result[0])
         if not category:
-            await guild.owner.send(f"{member.name} tried creating a ticket in your guild, but you have not yet set up a ticket category. Please use `{await get_prefix_from_guild(guild.id)}setcategory` in your guild.")
+            await guild.owner.send(f"{member.name} tried creating a ticket in your guild, but you have not yet set up a ticket category. Please have any admin use `{await get_prefix_from_guild(guild.id)}setcategory` in your guild.")
         nextid = result[1]
         cursor = db.cursor(buffered=True)
         command = f"UPDATE guilds SET next = {nextid + 1} WHERE id = {guild.id};"
         cursor.execute(command)
         db.commit()
+        channel = None
         try:
             print(f"Creating a ticket for {member.name} in {guild.name} ({guild.id})")
             channel = await guild.create_text_channel(f'ticket-{nextid}', category=category)
+        except discord.Forbidden:
+            print(f"Permission error when creating a channel")
+        try:
             await channel.set_permissions(member, read_messages=True)
-            await asyncio.sleep(1)
-            if not channel.permissions_for(member).read_messages:
-                print(f"{member.name} never got permission in the channel. Trying again.")
-                await channel.set_permissions(member, read_messages=True)
-                await asyncio.sleep(5)
-                if not channel.permissions_for(member).read_messages:
-                    print(f"{member.name} still does not have permissions in the channel.")
-                else:
-                    print("Second try fixed it!")
+        except discord.Forbidden:
+            print(f"Permission error when assigning permissions")
+        await asyncio.sleep(1)
+        ticket_message = None
+        try:
             embed = discord.Embed(title="Closing Tickets",
                                   description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
                                   color=0x6592e6)
             ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
+        except discord.Forbidden:
+            print(f"Permission error when sending a message")
+        try:
             await ticket_message.add_reaction("🔒")
             await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
-            cursor = db.cursor(buffered=True)
-            command = f"""INSERT INTO tickets (channel, creator, guild, expiry)
-                            VALUES({channel.id}, {member.id}, {guild.id}, {int(time.time()) + 30 * 60});"""
-            cursor.execute(command)
-            db.commit()
         except discord.Forbidden:
-            print(f"Permission error when creating a channel or assigning permissions")
+            print(f"Permission error when adding a reaction")
+        cursor = db.cursor(buffered=True)
+        command = f"""INSERT INTO tickets (channel, creator, guild, expiry)
+                        VALUES({channel.id}, {member.id}, {guild.id}, {int(time.time()) + 30 * 60});"""
+        cursor.execute(command)
+        db.commit()
 
 
 @bot.event

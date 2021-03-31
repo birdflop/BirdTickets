@@ -12,13 +12,14 @@
 
 # Setup
 1. [Click here](https://discord.com/oauth2/authorize?client_id=809975422640717845&permissions=268560464&scope=bot) to invite the bot to your server.
-3. Create a new `tickets` channel category. It doesn't necessarily have to be named tickets.
-4. Remove `@everyone`'s viewing permissions from `tickets`.
-5. Give your support team and `@BirdTickets` permission to the category.
-6. Set the category with `-setcategory <category_id>`. You may need to enable developer mode to get the category ID.
-7. (Optional) Use the `-panel` command wherever you want the panel to be.
-8. (Optional) Create a transcript channel with `-setlog <channel_mention>`.
-9. (Optional) Change the prefix with `-setprefix <new_prefix>`.
+2. Create a new private category.
+   <img src="https://i.imgur.com/JuEkppE.png">
+3. Add `@BirdTickets` and your support team to the category.
+   <img src="https://i.imgur.com/wZiE2KR.png">
+4. Set the category with `-setcategory <ticket_category_id>`. You may need to enable developer mode to get the category ID.
+5. (Optional) Use the `-panel` command wherever you want the panel to be.
+6. (Optional) Create a transcript channel with `-setlog <channel_mention>`.
+7. (Optional) Change the prefix with `-setprefix <new_prefix>`.
 
 # Support
 If you run into any issues or bugs, you can ask for help in the [Birdflop Hosting Discord](https://discord.gg/ZrRvTMu).
