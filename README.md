@@ -12,8 +12,10 @@
 # Setup
 1. [Click here](https://discord.com/oauth2/authorize?client_id=809975422640717845&permissions=268560464&scope=bot) to invite the bot to your server.
 2. Create a new private category.
+
    <img src="https://i.imgur.com/JuEkppE.png">
 3. Add `@BirdTickets` and your support team to the category.
+   
    <img src="https://i.imgur.com/wZiE2KR.png">
 4. Set the category with `-setcategory <ticket_category_id>`. You may need to enable developer mode to get the category ID.
 5. (Optional) Use the `-panel` command wherever you want the panel to be.
