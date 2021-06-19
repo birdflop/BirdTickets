@@ -634,6 +634,7 @@ async def create_ticket(guild, member, requested_from_channel):
     if result:
         channel = guild.get_channel(result[0])
         if channel:
+            await channel.set_permissions(member, read_messages=True)
             reply = f"{member.mention}, You already have a ticket open. Please state your issue here."
             await channel.send(reply)
             return
@@ -674,14 +675,18 @@ async def create_ticket(guild, member, requested_from_channel):
             embed = discord.Embed(title="Closing Tickets",
                                   description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
                                   color=0x6592e6)
-            ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
+            if guild.id == 699130648631181344:
+                ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.")
+            else:
+                ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
         except discord.Forbidden:
             print(f"Permission error when sending a message")
             await requested_from_channel.send(f"I do not have the necessary permissions to function properly")
             return
         try:
-            await ticket_message.add_reaction("🔒")
-            await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
+            if guild.id != 699130648631181344:
+                await ticket_message.add_reaction("🔒")
+                await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
         except discord.Forbidden:
             print(f"Permission error when adding a reaction")
             await channel.send(f"I do not have the necessary permissions to function properly")
