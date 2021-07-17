@@ -1,10 +1,10 @@
 ## Premium tickets without the premium.
 
 # Features
-1. Automatically close tickets if the ticket is left empty 1 hour after creation.
+1. Automatically close tickets if the ticket is left empty 30 minutes after creation (will after 15m).
 2. Automatically close tickets if the ticket creator leaves the Discord.
-3. Automatically close tickets if the creator fails to respond.
-4. HTML transcripts will be sent to your logs channel and to the ticket owner in PMs. (Temporarily reduced to just a txt transcript due to an issue with an external module. Expect a fix within a few days)
+3. Automatically close tickets if the creator fails to respond for 48 hours (will warn after 24h).
+4. HTML transcripts will be sent to your logs channel and to the ticket owner in PMs. (Temporarily reduced to just a txt transcript due to an issue with an external module. Expect a fix eventually)
 5. A reaction panel or commands can be used to open and close tickets.
 7. Custom bot prefix.
 8. Add and remove people from tickets.
