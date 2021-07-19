@@ -1,7 +1,7 @@
 ## Premium tickets without the premium.
 
 # Features
-1. Automatically close tickets if the ticket is left empty 30 minutes after creation (will after 15m).
+1. Automatically close tickets if the ticket is left empty 30 minutes after creation (will warn after 15m).
 2. Automatically close tickets if the ticket creator leaves the Discord.
 3. Automatically close tickets if the creator fails to respond for 48 hours (will warn after 24h).
 4. HTML transcripts will be sent to your logs channel and to the ticket owner in PMs.
