@@ -441,7 +441,7 @@ async def get_transcripts(channel):
     truncated = ""
     if len(messages) == 2000:
         truncated = "-truncated"
-    html1, html2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html'), \
+    html1, html2 = discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.htm'), \
                   discord.File(io.BytesIO(transcript.encode()), filename=f'{channel.name}{truncated}.html')
     return html1, html2, binflop_link, bool(truncated)
 
