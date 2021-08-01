@@ -605,13 +605,13 @@ async def on_raw_reaction_add(payload):
             channel = discord.utils.get(guild.channels, id=payload.channel_id)
             message = channel.get_partial_message(payload.message_id)
             member = guild.get_member(payload.user_id)
+            await create_ticket(guild, member, message.channel)
             try:
                 await message.remove_reaction('🎟️', member)
             except discord.Forbidden:
                 print(f"I do not have the necessary permissions to process a request in {guild.name}")
                 await message.channel.send(f"I do not have the necessary permissions to process your request")
                 return
-            await create_ticket(guild, member, message.channel)
     elif payload.emoji.name == "🔒":
         channel = bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
