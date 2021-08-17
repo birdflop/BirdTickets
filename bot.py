@@ -649,9 +649,16 @@ async def on_button_click(interaction):
         guild = interaction.guild
         channel = interaction.channel
         member = interaction.user
-        channel_id = await create_ticket(guild, member, channel)
-        await interaction.respond(type=InteractionType.ChannelMessageWithSource,
-                                  content=f'Please visit <#{channel_id}> to view your ticket.')
+        already_exists, channel_id = await create_ticket(guild, member, channel)
+        if already_exists:
+            await interaction.respond(type=InteractionType.ChannelMessageWithSource,
+                                      content=f'You already have an open ticket! Visit <#{channel_id}> to view your ticket.')
+        else:
+            if channel_id == 0:
+                return
+            else:
+                await interaction.respond(type=InteractionType.ChannelMessageWithSource,
+                                          content=f'Ticket created! Please visit <#{channel_id}> to view your ticket.')
 
 async def create_ticket(guild, member, requested_from_channel):
     cursor = db.cursor(buffered=True)
@@ -664,7 +671,7 @@ async def create_ticket(guild, member, requested_from_channel):
             await channel.set_permissions(member, read_messages=True)
             reply = f"{member.mention}, You already have a ticket open. Please state your issue here."
             await channel.send(reply)
-            return
+            return True, channel.id
         cursor = db.cursor(buffered=True)
         command = f"DELETE FROM tickets WHERE channel = %s LIMIT 1;"
         cursor.execute(command, (result[0],))
@@ -689,13 +696,13 @@ async def create_ticket(guild, member, requested_from_channel):
         except discord.Forbidden:
             print(f"Permission error when creating a channel")
             await requested_from_channel.send(f"I do not have the necessary permissions to process your request")
-            return
+            return False, 0
         try:
             await channel.set_permissions(member, read_messages=True)
         except discord.Forbidden:
             print(f"Permission error when assigning permissions")
             await requested_from_channel.send(f"I do not have the necessary permissions to process your request")
-            return
+            return False, 0
         await asyncio.sleep(1)
         try:
             if guild.id == 699130648631181344:
@@ -717,20 +724,20 @@ async def create_ticket(guild, member, requested_from_channel):
         except discord.Forbidden:
             print(f"Permission error when sending a message")
             await requested_from_channel.send(f"I do not have the necessary permissions to function properly")
-            return
+            return False, 0
         try:
             if guild.id != 699130648631181344:
                 await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
         except discord.Forbidden:
             print(f"Permission error when pinning a message.")
             await channel.send(f"I do not have the necessary permissions to function properly")
-            return
+            return False, 0
         cursor = db.cursor(buffered=True)
         command = f"""INSERT INTO tickets (channel, creator, guild, expiry)
                         VALUES(%s, %s, %s, %s);"""
         cursor.execute(command, (channel.id, member.id, guild.id, int(time.time()) + 30 * 60))
         db.commit()
-        return channel.id
+        return False, channel.id
 
 
 @bot.event
