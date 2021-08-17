@@ -717,7 +717,7 @@ async def create_ticket(guild, member, requested_from_channel):
                                                     type=InteractionType.ChannelMessageWithSource,
                                                     components=[
                                                         Button(
-                                                            style=ButtonStyle.blue,
+                                                            style=ButtonStyle.red,
                                                             label="Close Ticket",
                                                             custom_id="close_ticket")],
                                                     )
