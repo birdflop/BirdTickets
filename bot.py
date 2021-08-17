@@ -156,7 +156,7 @@ async def help(ctx, arg=None):
     if ctx.guild is None:
         return
     if arg is None:
-        embed_var = discord.Embed(title='BirdTickets Commands', color=0x6592e6)
+        embed_var = discord.Embed(title='BirdTickets Commands', color=0x5865F2)
         embed_var.add_field(name="Player commands",
                             value="__new__ - Create a new ticket\n"
                                   "__close__ - Close an existing ticket\n"
@@ -250,7 +250,7 @@ def is_staff(member, guild):
 
 @bot.command(name='invite', help='Get the bot''s invite link')
 async def invite(ctx):
-    embed_var = discord.Embed(title='BirdTickets Invite', color=0x6592e6,
+    embed_var = discord.Embed(title='BirdTickets Invite', color=0x5865F2,
                               description="See setup instructions [here](https://github.com/Pemigrade/BirdTickets/blob/master/README.md#setup)")
     await ctx.reply(embed=embed_var)
 
@@ -381,16 +381,16 @@ async def saveandclose(channel):
     ticket_owner = bot.get_user(result[0])
     transcript_file_1, transcript_file_2, binflop_link, truncated = await get_transcripts(channel)
     embed_var = discord.Embed(title='Transcript Created', description='Transcript was successfully created.',
-                              color=0x6592e6)
+                              color=0x5865F2)
     await msg_var.edit(embed=embed_var)
     if truncated:
         embed_var = discord.Embed(title='Ticket Transcript',
                                   description=f'Thank you for creating a ticket in **{channel.guild.name}**. Your transcript contained over 2000 messages, so it has been truncated. An HTML transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                  color=0x6592e6)
+                                  color=0x5865F2)
     else:
         embed_var = discord.Embed(title='Ticket Transcript',
                                   description=f'Thank you for creating a ticket in **{channel.guild.name}**. A transcript of your conversation is attached. Alternatively, you can view a text transcript at [bin.birdflop.com]({binflop_link}).',
-                                  color=0x6592e6)
+                                  color=0x5865F2)
     try:
         await ticket_owner.send(embed=embed_var, file=transcript_file_2)
         accepted_dm = ""
@@ -402,7 +402,7 @@ async def saveandclose(channel):
             embed_var = discord.Embed(title=channel.name,
                                       description=f"Created by {ticket_owner.mention} ({ticket_owner.name}#{ticket_owner.discriminator}). "
                                                   f"Text transcript at [bin.birdflop.com]({binflop_link}).{accepted_dm}",
-                                      color=0x6592e6)
+                                      color=0x5865F2)
             await transcript_channel.send(embed=embed_var, file=transcript_file_1)
     cursor = db.cursor(buffered=True)
     command = f"DELETE FROM tickets WHERE channel = %s;"
@@ -517,7 +517,7 @@ async def remove_log(ctx):
 
 @bot.command(name='panel', help='Create a panel')
 @has_permissions(administrator=True)
-async def panel(ctx, color=0x6592e6):
+async def panel(ctx, color=0x5865F2):
     if ctx.guild is None:
         return
     channel = ctx.channel
