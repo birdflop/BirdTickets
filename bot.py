@@ -523,8 +523,14 @@ async def panel(ctx, color=0x6592e6):
     channel = ctx.channel
     embed_var = discord.Embed(title="Need Help?", color=int(color),
                               description="React below to create a support ticket.")
-    p = await channel.send(embed=embed_var)
-    await p.add_reaction('🎟️')
+    p = await channel.send(embed=embed_var,
+                           type=InteractionType.ChannelMessageWithSource,
+                           components=[
+                               Button(
+                                    style=ButtonStyle.blue,
+                                    label="Create Ticket",
+                                    custom_id="create_ticket")],
+                            )
     cursor = db.cursor(buffered=True)
     command = f"""UPDATE guilds
                     SET panel = %s
@@ -639,6 +645,11 @@ async def on_button_click(interaction):
         if result and result[0] > 0:
             guild = bot.get_guild(interaction.guild.id)
             await saveandclose(discord.utils.get(guild.channels, id=interaction.channel.id))
+    if interaction.component.custom_id.startswith("create_ticket"):
+        guild = interaction.guild
+        channel = interaction.channel
+        member = interaction.user
+        await create_ticket(guild, member, channel)
 
 
 async def create_ticket(guild, member, requested_from_channel):
