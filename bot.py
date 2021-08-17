@@ -523,8 +523,14 @@ async def panel(ctx, color=0x6592e6):
     channel = ctx.channel
     embed_var = discord.Embed(title="Need Help?", color=int(color),
                               description="React below to create a support ticket.")
-    p = await channel.send(embed=embed_var)
-    await p.add_reaction('🎟️')
+    p = await channel.send(embed=embed_var,
+                           type=InteractionType.ChannelMessageWithSource,
+                           components=[
+                               Button(
+                                    style=ButtonStyle.blue,
+                                    label="Create Ticket",
+                                    custom_id="create_ticket")],
+                            )
     cursor = db.cursor(buffered=True)
     command = f"""UPDATE guilds
                     SET panel = %s
@@ -639,7 +645,13 @@ async def on_button_click(interaction):
         if result and result[0] > 0:
             guild = bot.get_guild(interaction.guild.id)
             await saveandclose(discord.utils.get(guild.channels, id=interaction.channel.id))
-
+    elif interaction.component.custom_id.startswith("create_ticket"):
+        guild = interaction.guild
+        channel = interaction.channel
+        member = interaction.user
+        channel_id = await create_ticket(guild, member, channel)
+        await interaction.respond(type=InteractionType.ChannelMessageWithSource,
+                                  content=f'Please visit <#{channel_id}> to view your ticket.')
 
 async def create_ticket(guild, member, requested_from_channel):
     cursor = db.cursor(buffered=True)
@@ -686,13 +698,13 @@ async def create_ticket(guild, member, requested_from_channel):
             return
         await asyncio.sleep(1)
         try:
-            embed_var = discord.Embed(title="Closing Tickets",
-                                      description=f'When your issue is resolved, press the "Close Ticket" button below or type '
-                                                  f'`{await get_prefix_from_guild(guild.id)}close` to close the ticket.',
-                                      color=0x5865F2)
             if guild.id == 699130648631181344:
                 ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.")
             else:
+                embed_var = discord.Embed(title="Closing Tickets",
+                                          description=f'When your issue is resolved, press the "Close Ticket" button below or type '
+                                                      f'`{await get_prefix_from_guild(guild.id)}close` to close the ticket.',
+                                          color=0x5865F2)
                 ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.",
                                                     embed=embed_var,
                                                     type=InteractionType.ChannelMessageWithSource,
@@ -708,10 +720,8 @@ async def create_ticket(guild, member, requested_from_channel):
             return
         try:
             if guild.id != 699130648631181344:
-#               await ticket_message.add_reaction("🔒")
                 await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
         except discord.Forbidden:
-#           print(f"Permission error when adding a reaction")
             print(f"Permission error when pinning a message.")
             await channel.send(f"I do not have the necessary permissions to function properly")
             return
@@ -720,6 +730,7 @@ async def create_ticket(guild, member, requested_from_channel):
                         VALUES(%s, %s, %s, %s);"""
         cursor.execute(command, (channel.id, member.id, guild.id, int(time.time()) + 30 * 60))
         db.commit()
+        return channel.id
 
 
 @bot.event
