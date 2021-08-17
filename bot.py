@@ -11,6 +11,7 @@ import json
 import time
 from datetime import datetime
 import mysql.connector
+from discord_components import DiscordComponents, Button, ButtonStyle, InteractionType
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -65,6 +66,7 @@ async def set_prefix(ctx, prefix = None):
 
 @bot.event
 async def on_ready():
+    DiscordComponents(bot, change_discord_methods=True)
     t = time.strftime("%b %d, %I:%M:%S %p")
     print(f"[{t}] I am running")
     await bot.change_presence(activity=discord.Game(name="birdflop.com"))
@@ -626,6 +628,19 @@ async def on_raw_reaction_add(payload):
                     await saveandclose(discord.utils.get(guild.channels, id=payload.channel_id))
 
 
+@bot.event
+async def on_button_click(interaction):
+    print('Button clicked.')
+    if interaction.component.custom_id.startswith("close_ticket"):
+        cursor = db.cursor(buffered=True)
+        command = f"SELECT COUNT(*) FROM tickets WHERE channel = %s LIMIT 1;"
+        cursor.execute(command, (interaction.channel.id,))
+        result = cursor.fetchone()
+        if result and result[0] > 0:
+            guild = bot.get_guild(interaction.guild.id)
+            await saveandclose(discord.utils.get(guild.channels, id=interaction.channel.id))
+
+
 async def create_ticket(guild, member, requested_from_channel):
     cursor = db.cursor(buffered=True)
     command = f"SELECT channel FROM tickets WHERE guild = %s AND creator = %s LIMIT 1;"
@@ -670,25 +685,34 @@ async def create_ticket(guild, member, requested_from_channel):
             await requested_from_channel.send(f"I do not have the necessary permissions to process your request")
             return
         await asyncio.sleep(1)
-        ticket_message = None
         try:
-            embed = discord.Embed(title="Closing Tickets",
-                                  description=f"When your issue has been resolved, react with 🔒 or type `{await get_prefix_from_guild(guild.id)}close` to close the ticket",
-                                  color=0x6592e6)
+            embed_var = discord.Embed(title="Closing Tickets",
+                                      description=f'When your issue is resolved, press the "Close Ticket" button below or type '
+                                                  f'`{await get_prefix_from_guild(guild.id)}close` to close the ticket.',
+                                      color=0x5865F2)
             if guild.id == 699130648631181344:
                 ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.")
             else:
-                ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.", embed=embed)
+                ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.",
+                                                    embed=embed_var,
+                                                    type=InteractionType.ChannelMessageWithSource,
+                                                    components=[
+                                                        Button(
+                                                            style=ButtonStyle.blue,
+                                                            label="Close Ticket",
+                                                            custom_id="close_ticket")],
+                                                    )
         except discord.Forbidden:
             print(f"Permission error when sending a message")
             await requested_from_channel.send(f"I do not have the necessary permissions to function properly")
             return
         try:
             if guild.id != 699130648631181344:
-                await ticket_message.add_reaction("🔒")
+#               await ticket_message.add_reaction("🔒")
                 await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
         except discord.Forbidden:
-            print(f"Permission error when adding a reaction")
+#           print(f"Permission error when adding a reaction")
+            print(f"Permission error when pinning a message.")
             await channel.send(f"I do not have the necessary permissions to function properly")
             return
         cursor = db.cursor(buffered=True)
