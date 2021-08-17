@@ -705,29 +705,25 @@ async def create_ticket(guild, member, requested_from_channel):
             return False, 0
         await asyncio.sleep(1)
         try:
-            if guild.id == 699130648631181344:
-                ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.")
-            else:
-                embed_var = discord.Embed(title="Closing Tickets",
-                                          description=f'When your issue is resolved, press the "Close Ticket" button below or type '
-                                                      f'`{await get_prefix_from_guild(guild.id)}close` to close the ticket.',
-                                          color=0x5865F2)
-                ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.",
-                                                    embed=embed_var,
-                                                    type=InteractionType.ChannelMessageWithSource,
-                                                    components=[
-                                                        Button(
-                                                            style=ButtonStyle.red,
-                                                            label="Close Ticket",
-                                                            custom_id="close_ticket")],
-                                                    )
+            embed_var = discord.Embed(title="Closing Tickets",
+                                      description=f'When your issue is resolved, press the "Close Ticket" button below or type '
+                                                  f'`{await get_prefix_from_guild(guild.id)}close` to close the ticket.',
+                                      color=0x5865F2)
+            ticket_message = await channel.send(f"Hello {member.mention}, please describe your issue in as much detail as possible.",
+                                                embed=embed_var,
+                                                type=InteractionType.ChannelMessageWithSource,
+                                                components=[
+                                                    Button(
+                                                        style=ButtonStyle.red,
+                                                        label="Close Ticket",
+                                                        custom_id="close_ticket")],
+                                                )
         except discord.Forbidden:
             print(f"Permission error when sending a message")
             await requested_from_channel.send(f"I do not have the necessary permissions to function properly")
             return False, 0
         try:
-            if guild.id != 699130648631181344:
-                await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
+            await ticket_message.pin(reason=f"Pinned first message in #{channel.name}")
         except discord.Forbidden:
             print(f"Permission error when pinning a message.")
             await channel.send(f"I do not have the necessary permissions to function properly")
