@@ -11,7 +11,7 @@ import json
 import time
 from datetime import datetime
 import mysql.connector
-from discord_components import DiscordComponents, Button, ButtonStyle, InteractionType
+from discord_components import *
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -66,7 +66,7 @@ async def set_prefix(ctx, prefix = None):
 
 @bot.event
 async def on_ready():
-    DiscordComponents(bot, change_discord_methods=True)
+    DiscordComponents(bot)
     t = time.strftime("%b %d, %I:%M:%S %p")
     print(f"[{t}] I am running")
     await bot.change_presence(activity=discord.Game(name="birdflop.com"))
@@ -226,9 +226,6 @@ async def help(ctx, arg=None):
             return
         if arg == "remove":
             await ctx.reply("Usage: `remove <player>`")
-            return
-        if arg == "invite":
-            await ctx.reply("This command requires no additional requirements")
             return
         await ctx.reply("That command does not exist")
 
